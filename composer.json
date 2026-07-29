@@ -4,10 +4,12 @@
     "description": "A Laravel package for developing monitoring and control applications for Internet of Things (IoT) devices.",
     "keywords": [
         "laravel",
-        "danpopa",
-        "laraiot"
+        "iot",
+        "mqtt",
+        "polling",
+        "websocket"
     ],
-    "homepage": "https://github.com/danpopa/laraiot",
+    "homepage": "https://github.com/danielpopa26/laraiot",
     "license": "MIT",
     "authors": [
         {
@@ -18,7 +20,7 @@
     ],
     "require": {
         "php": "^8.3",
-        "illuminate/support": "^12.0||^13.0"
+        "illuminate/support": "^13.0"
     },
     "require-dev": {
         "larastan/larastan": "^3.9",
