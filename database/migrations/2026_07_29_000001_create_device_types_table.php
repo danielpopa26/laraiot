@@ -10,15 +10,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('laraiot_placeholder', function (Blueprint $table) {
+        Schema::create('laraiot_device_types', function (Blueprint $table) {
             $table->id();
+            $table->string('identifier')->unique();
             $table->string('name');
+            $table->text('description')->nullable();
+            $table->boolean('is_enabled')->default(true);
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('laraiot_placeholder');
+        Schema::dropIfExists('laraiot_device_types');
     }
 };
