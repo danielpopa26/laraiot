@@ -6,6 +6,9 @@ namespace Danpopa\LaraIoT;
 
 use Danpopa\LaraIoT\Console\Commands\InstallCommand;
 use Illuminate\Support\ServiceProvider;
+use Danpopa\LaraIoT\Services\MqttConnectionService;
+use Danpopa\LaraIoT\Contracts\MqttClientFactory;
+use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
 
 class LaraIoTServiceProvider extends ServiceProvider
 {
@@ -17,6 +20,13 @@ class LaraIoTServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/laraiot.php', 'laraiot');
 
         $this->app->singleton(LaraIoT::class);
+
+        $this->app->singleton(
+            MqttClientFactory::class,
+            PhpMqttClientFactory::class,
+        );
+
+        $this->app->singleton(MqttConnectionService::class);
     }
 
     /**
