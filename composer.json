@@ -21,7 +21,8 @@
     "require": {
         "php": "^8.3",
         "illuminate/database": "^13.0",
-        "illuminate/support": "^13.0"
+        "illuminate/support": "^13.0",
+        "php-mqtt/client": "^2.3"
     },
     "require-dev": {
         "larastan/larastan": "^3.9",
