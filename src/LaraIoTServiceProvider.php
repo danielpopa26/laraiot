@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT;
 
-use Danpopa\LaraIoT\Console\Commands\LaraIoTCommand;
+use Danpopa\LaraIoT\Console\Commands\InstallCommand;
 use Illuminate\Support\ServiceProvider;
 
 class LaraIoTServiceProvider extends ServiceProvider
@@ -55,7 +55,7 @@ class LaraIoTServiceProvider extends ServiceProvider
         ], ['laraiot', 'laraiot-migrations']);
 
         $this->commands([
-            LaraIoTCommand::class,
+            InstallCommand::class,
         ]);
     }
 }
