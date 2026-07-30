@@ -1,0 +1,333 @@
+<?php
+
+declare(strict_types=1);
+
+use Danpopa\LaraIoT\Contracts\MqttClientFactory;
+use Danpopa\LaraIoT\Models\MqttTopic;
+use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Danpopa\LaraIoT\Services\MqttListenerService;
+use PhpMqtt\Client\ConnectionSettings;
+use PhpMqtt\Client\Contracts\MqttClient as MqttClientContract;
+
+beforeEach(function () {
+    config()->set(
+        'laraiot.mqtt.listener.client_id',
+        'laraiot-listener-test',
+    );
+
+    config()->set(
+        'laraiot.mqtt.listener.sync_interval',
+        5,
+    );
+
+    $this->physicalDevice = PhysicalDevice::query()->create([
+        'identifier' => 'listener-test-controller',
+        'name' => 'Listener test controller',
+    ]);
+});
+
+it('subscribes once to each enabled MQTT topic using its highest QoS', function () {
+    MqttTopic::query()->create([
+        'physical_device_id' => $this->physicalDevice->id,
+        'purpose' => 'state',
+        'topic' => 'test/shared/state',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    MqttTopic::query()->create([
+        'physical_device_id' => $this->physicalDevice->id,
+        'purpose' => 'state',
+        'topic' => 'test/shared/state',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 1,
+        'is_enabled' => true,
+    ]);
+
+    MqttTopic::query()->create([
+        'physical_device_id' => $this->physicalDevice->id,
+        'purpose' => 'state',
+        'topic' => 'test/disabled/state',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 2,
+        'is_enabled' => false,
+    ]);
+
+    $client = Mockery::mock(MqttClientContract::class);
+
+    $client->shouldReceive('connect')
+        ->once()
+        ->with(
+            Mockery::type(ConnectionSettings::class),
+            true,
+        )
+        ->andReturnNull();
+
+    $client->shouldReceive('subscribe')
+        ->once()
+        ->with(
+            'test/shared/state',
+            Mockery::type(Closure::class),
+            1,
+        )
+        ->andReturnNull();
+
+    $client->shouldReceive('registerLoopEventHandler')
+        ->once()
+        ->with(Mockery::type(Closure::class))
+        ->andReturn($client);
+
+    $client->shouldReceive('loop')
+        ->once()
+        ->with(true)
+        ->andReturnNull();
+
+    $client->shouldReceive('isConnected')
+        ->once()
+        ->andReturnTrue();
+
+    $client->shouldReceive('disconnect')
+        ->once()
+        ->andReturnNull();
+
+    $factory = Mockery::mock(MqttClientFactory::class);
+
+    $factory->shouldReceive('create')
+        ->once()
+        ->with(
+            '127.0.0.1',
+            1883,
+            'laraiot-listener-test',
+        )
+        ->andReturn($client);
+
+    $this->app->instance(
+        MqttClientFactory::class,
+        $factory,
+    );
+
+    $this->app
+        ->make(MqttListenerService::class)
+        ->listen();
+});
+
+it('forwards received MQTT messages to the message handler', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'physical_device_id' => $this->physicalDevice->id,
+        'purpose' => 'state',
+        'topic' => 'test/device/state',
+        'payload_mapping' => [
+            'format' => 'raw',
+            'value_map' => [
+                'ON' => true,
+                'OFF' => false,
+            ],
+        ],
+        'qos' => 1,
+        'is_enabled' => true,
+    ]);
+
+    $messageCallback = null;
+
+    $client = Mockery::mock(MqttClientContract::class);
+
+    $client->shouldReceive('connect')
+        ->once()
+        ->with(
+            Mockery::type(ConnectionSettings::class),
+            true,
+        )
+        ->andReturnNull();
+
+    $client->shouldReceive('subscribe')
+        ->once()
+        ->withArgs(function (
+            string $topic,
+            callable $callback,
+            int $qos,
+        ) use (&$messageCallback): bool {
+            $messageCallback = $callback;
+
+            return $topic === 'test/device/state'
+                && $qos === 1;
+        })
+        ->andReturnNull();
+
+    $client->shouldReceive('registerLoopEventHandler')
+        ->once()
+        ->with(Mockery::type(Closure::class))
+        ->andReturn($client);
+
+    $client->shouldReceive('loop')
+        ->once()
+        ->with(true)
+        ->andReturnUsing(function () use (
+            &$messageCallback,
+        ): void {
+            expect($messageCallback)->not->toBeNull();
+
+            $messageCallback(
+                'test/device/state',
+                'ON',
+                false,
+                [],
+            );
+        });
+
+    $client->shouldReceive('isConnected')
+        ->once()
+        ->andReturnTrue();
+
+    $client->shouldReceive('disconnect')
+        ->once()
+        ->andReturnNull();
+
+    $factory = Mockery::mock(MqttClientFactory::class);
+
+    $factory->shouldReceive('create')
+        ->once()
+        ->andReturn($client);
+
+    $this->app->instance(
+        MqttClientFactory::class,
+        $factory,
+    );
+
+    $this->app
+        ->make(MqttListenerService::class)
+        ->listen();
+
+    $mqttTopic->refresh();
+
+    expect($mqttTopic->last_payload)->toBe('ON')
+        ->and($mqttTopic->last_value)->toBe([
+            'configured_format' => 'raw',
+            'detected_format' => 'raw',
+            'extracted_value' => 'ON',
+            'normalized_value' => true,
+        ])
+        ->and($mqttTopic->last_received_at)->not->toBeNull()
+        ->and($mqttTopic->last_error)->toBeNull();
+});
+
+it('synchronizes MQTT subscriptions while the listener is running', function () {
+    $firstTopic = MqttTopic::query()->create([
+        'physical_device_id' => $this->physicalDevice->id,
+        'purpose' => 'state',
+        'topic' => 'test/first/state',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    $loopHandler = null;
+    $physicalDeviceId = $this->physicalDevice->id;
+
+    $client = Mockery::mock(MqttClientContract::class);
+
+    $client->shouldReceive('connect')
+        ->once()
+        ->with(
+            Mockery::type(ConnectionSettings::class),
+            true,
+        )
+        ->andReturnNull();
+
+    $client->shouldReceive('subscribe')
+        ->once()
+        ->with(
+            'test/first/state',
+            Mockery::type(Closure::class),
+            0,
+        )
+        ->andReturnNull();
+
+    $client->shouldReceive('subscribe')
+        ->once()
+        ->with(
+            'test/second/state',
+            Mockery::type(Closure::class),
+            2,
+        )
+        ->andReturnNull();
+
+    $client->shouldReceive('unsubscribe')
+        ->once()
+        ->with('test/first/state')
+        ->andReturnNull();
+
+    $client->shouldReceive('registerLoopEventHandler')
+        ->once()
+        ->withArgs(function (
+            Closure $callback,
+        ) use (&$loopHandler): bool {
+            $loopHandler = $callback;
+
+            return true;
+        })
+        ->andReturn($client);
+
+    $client->shouldReceive('loop')
+        ->once()
+        ->with(true)
+        ->andReturnUsing(function () use (
+            &$loopHandler,
+            $client,
+            $firstTopic,
+            $physicalDeviceId,
+        ): void {
+            $firstTopic->update([
+                'is_enabled' => false,
+            ]);
+
+            MqttTopic::query()->create([
+                'physical_device_id' => $physicalDeviceId,
+                'purpose' => 'state',
+                'topic' => 'test/second/state',
+                'payload_mapping' => [
+                    'format' => 'raw',
+                ],
+                'qos' => 2,
+                'is_enabled' => true,
+            ]);
+
+            expect($loopHandler)->not->toBeNull();
+
+            $loopHandler(
+                $client,
+                5.0,
+            );
+        });
+
+    $client->shouldReceive('isConnected')
+        ->once()
+        ->andReturnTrue();
+
+    $client->shouldReceive('disconnect')
+        ->once()
+        ->andReturnNull();
+
+    $factory = Mockery::mock(MqttClientFactory::class);
+
+    $factory->shouldReceive('create')
+        ->once()
+        ->andReturn($client);
+
+    $this->app->instance(
+        MqttClientFactory::class,
+        $factory,
+    );
+
+    $this->app
+        ->make(MqttListenerService::class)
+        ->listen();
+});

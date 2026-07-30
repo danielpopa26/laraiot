@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Danpopa\LaraIoT;
 
 use Danpopa\LaraIoT\Console\Commands\InstallCommand;
-use Illuminate\Support\ServiceProvider;
-use Danpopa\LaraIoT\Services\MqttConnectionService;
+use Danpopa\LaraIoT\Console\Commands\ListenMqttCommand;
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
+use Danpopa\LaraIoT\Services\MqttConnectionService;
 use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
+use Illuminate\Support\ServiceProvider;
 
 class LaraIoTServiceProvider extends ServiceProvider
 {
@@ -66,6 +67,7 @@ class LaraIoTServiceProvider extends ServiceProvider
 
         $this->commands([
             InstallCommand::class,
+            ListenMqttCommand::class,
         ]);
     }
 }
