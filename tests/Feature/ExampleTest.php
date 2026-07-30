@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Danpopa\LaraIoT\LaraIoT;
 use Danpopa\LaraIoT\LaraIoTServiceProvider;
+use Danpopa\LaraIoT\Services\MqttPublisher;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\ServiceProvider;
 
@@ -13,6 +14,15 @@ it('resolves the singleton', function () {
 
 it('returns the same instance from the container', function () {
     expect(app(LaraIoT::class))->toBe(app(LaraIoT::class));
+});
+
+it('registers the MQTT publisher as a singleton', function () {
+    $publisher = app(MqttPublisher::class);
+
+    expect($publisher)
+        ->toBeInstanceOf(MqttPublisher::class)
+        ->and($publisher)
+        ->toBe(app(MqttPublisher::class));
 });
 
 it('merges the package configuration', function () {
