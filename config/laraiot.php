@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Danpopa\LaraIoT\Services\Parsers\JsonPayloadParser;
+use Danpopa\LaraIoT\Services\Parsers\RawPayloadParser;
+
 return [
 
     /*
@@ -76,6 +79,21 @@ return [
         'keep_alive' => env('LARAIOT_MQTT_KEEP_ALIVE', 60),
         'connection_timeout' => env('LARAIOT_MQTT_CONNECTION_TIMEOUT', 10),
         'tls' => env('LARAIOT_MQTT_TLS', false),
+        'listener' => [
+            'client_id' => env(
+                'LARAIOT_MQTT_LISTENER_CLIENT_ID',
+                'laraiot-listener',
+            ),
+
+            'sync_interval' => env(
+                'LARAIOT_MQTT_LISTENER_SYNC_INTERVAL',
+                5,
+            ),
+        ],
+        'payload_parsers' => [
+            RawPayloadParser::class,
+            JsonPayloadParser::class,
+        ],
     ],
 
     /*
