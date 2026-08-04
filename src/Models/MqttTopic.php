@@ -8,7 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class MqttTopic extends Model
+/**
+ * @property string $topic
+ * @property int $qos
+ */
+final class MqttTopic extends Model
 {
     protected $table = 'laraiot_mqtt_topics';
 

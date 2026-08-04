@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
-use Danpopa\LaraIoT\Services\MqttPublisher;
-use Danpopa\LaraIoT\Exceptions\MqttPublishException;
 use Danpopa\LaraIoT\Exceptions\MqttConnectionException;
+use Danpopa\LaraIoT\Exceptions\MqttPublishException;
+use Danpopa\LaraIoT\Services\MqttPublisher;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Contracts\MqttClient as MqttClientContract;
 use PhpMqtt\Client\Exceptions\MqttClientException;

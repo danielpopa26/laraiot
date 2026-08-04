@@ -6,6 +6,4 @@ namespace Danpopa\LaraIoT\Exceptions;
 
 use RuntimeException;
 
-class MqttConnectionException extends RuntimeException
-{
-}
+class MqttConnectionException extends RuntimeException {}

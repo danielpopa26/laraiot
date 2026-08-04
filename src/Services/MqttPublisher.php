@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Services;
 
+use Danpopa\LaraIoT\Contracts\MqttPublisher as MqttPublisherContract;
 use Danpopa\LaraIoT\Exceptions\MqttPublishException;
 use InvalidArgumentException;
 use PhpMqtt\Client\Exceptions\MqttClientException;
 use Throwable;
 
-final class MqttPublisher
+final class MqttPublisher implements MqttPublisherContract
 {
     public function __construct(
         private readonly MqttConnectionService $connectionService,
-    ) {
-    }
+    ) {}
 
     public function publish(
         string $topic,

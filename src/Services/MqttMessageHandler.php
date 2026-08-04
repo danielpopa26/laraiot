@@ -18,6 +18,7 @@ final class MqttMessageHandler
     {
         $mqttTopics = MqttTopic::query()
             ->where('topic', $topic)
+            ->where('purpose', 'state')
             ->where('is_enabled', true)
             ->get();
 

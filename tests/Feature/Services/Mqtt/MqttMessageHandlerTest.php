@@ -153,3 +153,34 @@ it('ignores MQTT messages for unknown topics', function () {
 
     expect($handledTopics)->toBe(0);
 });
+
+it('ignores command MQTT topics', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'physical_device_id' => $this->physicalDevice->id,
+        'purpose' => 'command',
+        'topic' => 'cmnd/test-controller/POWER1',
+        'payload_mapping' => [
+            'format' => 'raw',
+            'command_map' => [
+                'on' => 'ON',
+                'off' => 'OFF',
+            ],
+        ],
+        'qos' => 0,
+        'retain' => false,
+        'is_enabled' => true,
+    ]);
+
+    $handledTopics = app(MqttMessageHandler::class)->handle(
+        'cmnd/test-controller/POWER1',
+        'ON',
+    );
+
+    $mqttTopic->refresh();
+
+    expect($handledTopics)->toBe(0)
+        ->and($mqttTopic->last_payload)->toBeNull()
+        ->and($mqttTopic->last_value)->toBeNull()
+        ->and($mqttTopic->last_received_at)->toBeNull()
+        ->and($mqttTopic->last_error)->toBeNull();
+});

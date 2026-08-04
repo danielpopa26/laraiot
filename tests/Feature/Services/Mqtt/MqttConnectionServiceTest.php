@@ -99,7 +99,7 @@ it('wraps client creation errors in an MQTT connection exception', function () {
 
     $factory->shouldReceive('create')
         ->once()
-        ->andThrow(new \InvalidArgumentException(
+        ->andThrow(new InvalidArgumentException(
             'Invalid MQTT client parameters.',
         ));
 
