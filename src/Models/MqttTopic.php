@@ -9,8 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
+ * @property string $purpose
  * @property string $topic
  * @property int $qos
+ * @property bool $retain
+ * @property bool $is_enabled
  */
 final class MqttTopic extends Model
 {

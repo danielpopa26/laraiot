@@ -6,6 +6,7 @@ namespace Danpopa\LaraIoT;
 
 use Danpopa\LaraIoT\Console\Commands\InstallCommand;
 use Danpopa\LaraIoT\Console\Commands\ListenMqttCommand;
+use Danpopa\LaraIoT\Console\Commands\PublishMqttCommand;
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
 use Danpopa\LaraIoT\Contracts\MqttPublisher as MqttPublisherContract;
 use Danpopa\LaraIoT\Services\MqttConnectionService;
@@ -77,6 +78,7 @@ class LaraIoTServiceProvider extends ServiceProvider
         $this->commands([
             InstallCommand::class,
             ListenMqttCommand::class,
+            PublishMqttCommand::class,
         ]);
     }
 }
