@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
+use Danpopa\LaraIoT\Models\DeviceType;
+use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
 use Danpopa\LaraIoT\Services\MqttListenerService;
@@ -20,15 +22,29 @@ beforeEach(function () {
         5,
     );
 
+    $deviceType = DeviceType::query()->create([
+        'identifier' => 'listener-test-relay',
+        'name' => 'Listener test relay',
+        'is_enabled' => true,
+    ]);
+
     $this->physicalDevice = PhysicalDevice::query()->create([
         'identifier' => 'listener-test-controller',
         'name' => 'Listener test controller',
+    ]);
+
+    $this->logicalDevice = LogicalDevice::query()->create([
+        'physical_device_id' => $this->physicalDevice->getKey(),
+        'device_type_id' => $deviceType->getKey(),
+        'identifier' => 'listener-test-logical-relay',
+        'name' => 'Listener test logical relay',
+        'is_enabled' => true,
     ]);
 });
 
 it('subscribes once to each enabled MQTT topic using its highest QoS', function () {
     MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/shared/state',
         'payload_mapping' => [
@@ -39,7 +55,7 @@ it('subscribes once to each enabled MQTT topic using its highest QoS', function 
     ]);
 
     MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/shared/state',
         'payload_mapping' => [
@@ -50,7 +66,7 @@ it('subscribes once to each enabled MQTT topic using its highest QoS', function 
     ]);
 
     MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/disabled/state',
         'payload_mapping' => [
@@ -120,7 +136,7 @@ it('subscribes once to each enabled MQTT topic using its highest QoS', function 
 
 it('forwards received MQTT messages to the message handler', function () {
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/device/state',
         'payload_mapping' => [
@@ -219,7 +235,7 @@ it('forwards received MQTT messages to the message handler', function () {
 
 it('synchronizes MQTT subscriptions while the listener is running', function () {
     $firstTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/first/state',
         'payload_mapping' => [
@@ -230,7 +246,7 @@ it('synchronizes MQTT subscriptions while the listener is running', function () 
     ]);
 
     $loopHandler = null;
-    $physicalDeviceId = $this->physicalDevice->id;
+    $logicalDeviceId = $this->logicalDevice->getKey();
 
     $client = Mockery::mock(MqttClientContract::class);
 
@@ -283,14 +299,14 @@ it('synchronizes MQTT subscriptions while the listener is running', function () 
             &$loopHandler,
             $client,
             $firstTopic,
-            $physicalDeviceId,
+            $logicalDeviceId,
         ): void {
             $firstTopic->update([
                 'is_enabled' => false,
             ]);
 
             MqttTopic::query()->create([
-                'physical_device_id' => $physicalDeviceId,
+                'logical_device_id' => $logicalDeviceId,
                 'purpose' => 'state',
                 'topic' => 'test/second/state',
                 'payload_mapping' => [

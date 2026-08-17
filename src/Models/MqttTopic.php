@@ -14,13 +14,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $qos
  * @property bool $retain
  * @property bool $is_enabled
+ * @property int $logical_device_id
  */
 final class MqttTopic extends Model
 {
     protected $table = 'laraiot_mqtt_topics';
 
     protected $fillable = [
-        'physical_device_id',
         'logical_device_id',
         'purpose',
         'topic',
@@ -47,17 +47,6 @@ final class MqttTopic extends Model
             'last_value' => 'array',
             'last_received_at' => 'datetime',
         ];
-    }
-
-    /**
-     * @return BelongsTo<PhysicalDevice, $this>
-     */
-    public function physicalDevice(): BelongsTo
-    {
-        return $this->belongsTo(
-            PhysicalDevice::class,
-            'physical_device_id',
-        );
     }
 
     /**

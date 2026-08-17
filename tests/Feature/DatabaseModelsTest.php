@@ -21,11 +21,18 @@ it('runs the LaraIoT package migrations', function () {
         ->and(Schema::hasTable('laraiot_activity_logs'))->toBeTrue()
         ->and(Schema::hasTable('laraiot_settings'))->toBeTrue()
         ->and(Schema::hasColumns('laraiot_mqtt_topics', [
+            'logical_device_id',
             'last_payload',
             'last_value',
             'last_received_at',
             'last_error',
         ]))->toBeTrue()
+        ->and(
+            Schema::hasColumn(
+                'laraiot_mqtt_topics',
+                'physical_device_id',
+            ),
+        )->toBeFalse()
         ->and(Schema::hasColumns('laraiot_activity_logs', [
             'actor_type',
             'actor_id',
@@ -56,7 +63,6 @@ it('persists model casts and resolves relationships', function () {
     ]);
 
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $physicalDevice->getKey(),
         'logical_device_id' => $logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'laraiot/device-01/relay-01/state',
@@ -105,6 +111,11 @@ it('persists model casts and resolves relationships', function () {
                 ->is($mqttTopic),
         )->toBeTrue()
         ->and(
+            $mqttTopic->logicalDevice()
+                ->firstOrFail()
+                ->is($logicalDevice),
+        )->toBeTrue()
+        ->and(
             $mqttTopic->activityLogs()
                 ->firstOrFail()
                 ->is($activityLog),
@@ -114,6 +125,42 @@ it('persists model casts and resolves relationships', function () {
                 ->firstOrFail()
                 ->is($physicalDevice),
         )->toBeTrue();
+});
+
+it('deletes MQTT topics with their logical device', function () {
+    $deviceType = DeviceType::query()->create([
+        'identifier' => 'cascade-relay',
+        'name' => 'Cascade relay',
+        'is_enabled' => true,
+    ]);
+
+    $physicalDevice = PhysicalDevice::query()->create([
+        'identifier' => 'cascade-controller',
+        'name' => 'Cascade controller',
+        'is_enabled' => true,
+    ]);
+
+    $logicalDevice = LogicalDevice::query()->create([
+        'physical_device_id' => $physicalDevice->getKey(),
+        'device_type_id' => $deviceType->getKey(),
+        'identifier' => 'cascade-logical-relay',
+        'name' => 'Cascade logical relay',
+        'is_enabled' => true,
+    ]);
+
+    $mqttTopic = $logicalDevice->mqttTopics()->create([
+        'purpose' => 'state',
+        'topic' => 'test/cascade/state',
+        'is_enabled' => true,
+    ]);
+
+    $logicalDevice->delete();
+
+    expect(
+        MqttTopic::query()
+            ->whereKey($mqttTopic->getKey())
+            ->exists(),
+    )->toBeFalse();
 });
 
 it('creates and reuses the current application settings', function () {

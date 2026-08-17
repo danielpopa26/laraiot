@@ -39,7 +39,13 @@ abstract class TestCase extends Orchestra
         );
 
         $app->useDatabasePath($this->testDatabasePath);
+
         $app['config']->set('database.default', 'testing');
+
+        $app['config']->set(
+            'database.connections.testing.foreign_key_constraints',
+            true,
+        );
     }
 
     protected function defineDatabaseMigrations(): void

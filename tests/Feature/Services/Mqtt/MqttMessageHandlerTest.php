@@ -2,20 +2,36 @@
 
 declare(strict_types=1);
 
+use Danpopa\LaraIoT\Models\DeviceType;
+use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
 use Danpopa\LaraIoT\Services\MqttMessageHandler;
 
 beforeEach(function () {
+    $deviceType = DeviceType::query()->create([
+        'identifier' => 'test-relay',
+        'name' => 'Test relay',
+        'is_enabled' => true,
+    ]);
+
     $this->physicalDevice = PhysicalDevice::query()->create([
         'identifier' => 'test-controller',
         'name' => 'Test controller',
+    ]);
+
+    $this->logicalDevice = LogicalDevice::query()->create([
+        'physical_device_id' => $this->physicalDevice->getKey(),
+        'device_type_id' => $deviceType->getKey(),
+        'identifier' => 'test-logical-relay',
+        'name' => 'Test logical relay',
+        'is_enabled' => true,
     ]);
 });
 
 it('persists a processed MQTT message', function () {
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/device/state',
         'payload_mapping' => [
@@ -56,7 +72,7 @@ it('stores a payload processing error', function () {
     ];
 
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/device/json',
         'payload_mapping' => [
@@ -84,7 +100,7 @@ it('stores a payload processing error', function () {
 
 it('ignores disabled MQTT topics', function () {
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/device/disabled',
         'payload_mapping' => [
@@ -108,7 +124,7 @@ it('ignores disabled MQTT topics', function () {
 
 it('updates every enabled record using the received MQTT topic', function () {
     $firstTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/shared/state',
         'payload_mapping' => [
@@ -119,7 +135,7 @@ it('updates every enabled record using the received MQTT topic', function () {
     ]);
 
     $secondTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/shared/state',
         'payload_mapping' => [
@@ -156,7 +172,7 @@ it('ignores MQTT messages for unknown topics', function () {
 
 it('ignores command MQTT topics', function () {
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $this->physicalDevice->id,
+        'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'command',
         'topic' => 'cmnd/test-controller/POWER1',
         'payload_mapping' => [

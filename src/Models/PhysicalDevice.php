@@ -37,12 +37,4 @@ class PhysicalDevice extends Model
     {
         return $this->hasMany(LogicalDevice::class, 'physical_device_id');
     }
-
-    /**
-     * @return HasMany<MqttTopic, $this>
-     */
-    public function mqttTopics(): HasMany
-    {
-        return $this->hasMany(MqttTopic::class, 'physical_device_id');
-    }
 }
