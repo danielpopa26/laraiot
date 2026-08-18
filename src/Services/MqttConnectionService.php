@@ -45,6 +45,22 @@ final class MqttConnectionService
             $cleanSession,
         );
 
+        $keepAlive = max(
+            1,
+            (int) $this->config->get(
+                'laraiot.mqtt.keep_alive',
+                10,
+            ),
+        );
+
+        $connectionTimeout = max(
+            1,
+            (int) $this->config->get(
+                'laraiot.mqtt.connection_timeout',
+                5,
+            ),
+        );
+
         try {
             $client = $this->clientFactory->create(
                 $host,
@@ -53,29 +69,56 @@ final class MqttConnectionService
             );
 
             $settings = (new ConnectionSettings)
-                ->setUsername($this->nullableString(
-                    $this->config->get('laraiot.mqtt.username'),
-                ))
-                ->setPassword($this->nullableString(
-                    $this->config->get('laraiot.mqtt.password'),
-                ))
-                ->setKeepAliveInterval((int) $this->config->get(
-                    'laraiot.mqtt.keep_alive',
-                    60,
-                ))
-                ->setConnectTimeout((int) $this->config->get(
-                    'laraiot.mqtt.connection_timeout',
-                    10,
-                ))
-                ->setUseTls((bool) $this->config->get(
-                    'laraiot.mqtt.tls',
-                    false,
-                ));
+                ->setUsername(
+                    $this->nullableString(
+                        $this->config->get(
+                            'laraiot.mqtt.username',
+                        ),
+                    ),
+                )
+                ->setPassword(
+                    $this->nullableString(
+                        $this->config->get(
+                            'laraiot.mqtt.password',
+                        ),
+                    ),
+                )
+                ->setConnectTimeout($connectionTimeout)
+                ->setKeepAliveInterval($keepAlive)
+                ->setUseTls(
+                    (bool) $this->config->get(
+                        'laraiot.mqtt.tls.enabled',
+                        false,
+                    ),
+                )
+                ->setTlsVerifyPeer(
+                    (bool) $this->config->get(
+                        'laraiot.mqtt.tls.verify_peer',
+                        true,
+                    ),
+                )
+                ->setTlsVerifyPeerName(
+                    (bool) $this->config->get(
+                        'laraiot.mqtt.tls.verify_peer_name',
+                        true,
+                    ),
+                )
+                ->setTlsSelfSignedAllowed(
+                    (bool) $this->config->get(
+                        'laraiot.mqtt.tls.allow_self_signed',
+                        false,
+                    ),
+                );
 
-            $client->connect($settings, $cleanSession);
+            $client->connect(
+                $settings,
+                $cleanSession,
+            );
 
             return $client;
-        } catch (MqttClientException|InvalidArgumentException $exception) {
+        } catch (
+            MqttClientException|InvalidArgumentException $exception
+        ) {
             throw new MqttConnectionException(
                 message: sprintf(
                     'Unable to connect to the MQTT broker at %s:%d.',
@@ -89,7 +132,9 @@ final class MqttConnectionService
 
     private function resolveClientId(?string $clientId): ?string
     {
-        $clientId ??= $this->config->get('laraiot.mqtt.client_id');
+        $clientId ??= $this->config->get(
+            'laraiot.mqtt.client_id',
+        );
 
         if (! is_string($clientId)) {
             return null;
@@ -97,7 +142,9 @@ final class MqttConnectionService
 
         $clientId = trim($clientId);
 
-        return $clientId !== '' ? $clientId : null;
+        return $clientId !== ''
+            ? $clientId
+            : null;
     }
 
     private function nullableString(mixed $value): ?string

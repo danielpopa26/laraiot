@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('purpose');
             $table->string('topic');
             $table->json('payload_mapping')->nullable();
+
             $table->unsignedTinyInteger('qos')->default(0);
             $table->boolean('retain')->default(false);
             $table->boolean('is_enabled')->default(true);

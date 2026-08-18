@@ -163,37 +163,42 @@ it('deletes MQTT topics with their logical device', function () {
     )->toBeFalse();
 });
 
-it('creates and reuses the current application settings', function () {
-    config()->set([
-        'laraiot.mode' => 'websocket',
-        'laraiot.polling.interval' => 5,
-        'laraiot.timezone' => 'Europe/Bucharest',
-    ]);
-
+it('returns the current singleton application settings', function () {
     $settings = ApplicationSetting::current();
     $sameSettings = ApplicationSetting::current();
 
     expect($sameSettings->is($settings))->toBeTrue()
+        ->and($settings->getKey())
+        ->toBe(ApplicationSetting::SINGLETON_ID)
         ->and(ApplicationSetting::query()->count())->toBe(1)
         ->and($settings->getAttribute('application_mode'))
-        ->toBe('websocket')
-        ->and($settings->getAttribute('polling_interval'))->toBe(5)
-        ->and($settings->getAttribute('timezone'))
-        ->toBe('Europe/Bucharest')
+        ->toBe(ApplicationSetting::MODE_POLLING)
+        ->and($settings->getAttribute('polling_interval'))->toBe(10)
+        ->and($settings->getAttribute('timezone'))->toBe('UTC')
         ->and($settings->getAttribute('date_format'))->toBe('d M Y')
-        ->and($settings->getAttribute('time_format'))->toBe('H:i:s');
+        ->and($settings->getAttribute('time_format'))->toBe('H:i:s')
+        ->and(ApplicationSetting::defaults())->toBe([
+            'application_mode' => ApplicationSetting::MODE_POLLING,
+            'polling_interval' => 10,
+            'timezone' => 'UTC',
+            'date_format' => 'd M Y',
+            'time_format' => 'H:i:s',
+        ]);
 });
 
-it('normalizes invalid application setting values', function () {
-    config()->set([
-        'laraiot.mode' => 'invalid',
-        'laraiot.polling.interval' => 0,
-        'laraiot.timezone' => '',
-    ]);
-
+it('detects whether the current application settings use websocket mode', function () {
     $settings = ApplicationSetting::current();
 
-    expect($settings->getAttribute('application_mode'))->toBe('polling')
-        ->and($settings->getAttribute('polling_interval'))->toBe(1)
-        ->and($settings->getAttribute('timezone'))->toBe('UTC');
+    expect($settings->usesWebsocket())->toBeFalse();
+
+    $settings->update([
+        'application_mode' => ApplicationSetting::MODE_WEBSOCKET,
+    ]);
+
+    $settings->refresh();
+
+    expect($settings->usesWebsocket())->toBeTrue()
+        ->and($settings->getAttribute('application_mode'))
+        ->toBe(ApplicationSetting::MODE_WEBSOCKET)
+        ->and(ApplicationSetting::query()->count())->toBe(1);
 });

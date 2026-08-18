@@ -12,54 +12,83 @@ use Throwable;
 final class PublishMqttCommand extends Command
 {
     protected $signature = 'laraiot:publish
-                            {mqttTopicId : The ID of the MQTT command topic}
-                            {payload : The payload to publish}
-                            {--client-id= : Optional MQTT client identifier}';
+        {topicId : ID of the configured MQTT command topic}
+        {command : Logical command key from the topic command map}
+        {--client-id= : Optional MQTT client ID}';
 
-    protected $description = 'Publish a command through a configured LaraIoT MQTT topic';
+    protected $description =
+        'Publish a configured MQTT command through LaraIoT.';
 
-    public function handle(MqttCommandService $commandService): int
-    {
+    public function handle(
+        MqttCommandService $commandService,
+    ): int {
+        $topicId = $this->argument('topicId');
+        $command = $this->argument('command');
+        $clientId = $this->option('client-id');
+
+        if (
+            ! is_string($topicId)
+            || ! ctype_digit($topicId)
+        ) {
+            $this->components->error(
+                'The MQTT topic ID must be a positive integer.',
+            );
+
+            return self::FAILURE;
+        }
+
+        if (
+            ! is_string($command)
+            || trim($command) === ''
+        ) {
+            $this->components->error(
+                'The MQTT command must not be empty.',
+            );
+
+            return self::FAILURE;
+        }
+
         $mqttTopic = MqttTopic::query()->find(
-            (int) $this->argument('mqttTopicId'),
+            (int) $topicId,
         );
 
-        if (! $mqttTopic instanceof MqttTopic) {
-            $this->error('The specified MQTT topic was not found.');
+        if ($mqttTopic === null) {
+            $this->components->error(
+                sprintf(
+                    'MQTT topic with ID %s was not found.',
+                    $topicId,
+                ),
+            );
 
             return self::FAILURE;
         }
 
-        $clientIdOption = $this->option('client-id');
-
-        $clientId = is_string($clientIdOption) && $clientIdOption !== ''
-            ? $clientIdOption
-            : null;
-
-        $payload = $this->argument('payload');
-
-        if (! is_string($payload)) {
-            $this->error('The payload must be a string.');
-
-            return self::FAILURE;
-        }
+        $resolvedClientId = is_string($clientId)
+            && trim($clientId) !== ''
+                ? trim($clientId)
+                : null;
 
         try {
             $commandService->send(
                 mqttTopic: $mqttTopic,
-                payload: $payload,
-                clientId: $clientId,
+                command: trim($command),
+                clientId: $resolvedClientId,
             );
         } catch (Throwable $exception) {
-            $this->error($exception->getMessage());
+            $this->components->error(
+                $exception->getMessage(),
+            );
 
             return self::FAILURE;
         }
 
-        $this->info(sprintf(
-            'MQTT command published successfully to topic [%s].',
-            $mqttTopic->topic,
-        ));
+        $this->components->info(
+            sprintf(
+                'MQTT command "%s" published to "%s".',
+                trim($command),
+                $mqttTopic->topic,
+            ),
+        );
 
         return self::SUCCESS;
     }

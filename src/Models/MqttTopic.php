@@ -7,14 +7,20 @@ namespace Danpopa\LaraIoT\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property int $logical_device_id
  * @property string $purpose
  * @property string $topic
+ * @property array<string, mixed>|null $payload_mapping
  * @property int $qos
  * @property bool $retain
  * @property bool $is_enabled
- * @property int $logical_device_id
+ * @property string|null $last_payload
+ * @property mixed $last_value
+ * @property Carbon|null $last_received_at
+ * @property string|null $last_error
  */
 final class MqttTopic extends Model
 {
@@ -44,7 +50,7 @@ final class MqttTopic extends Model
             'qos' => 'integer',
             'retain' => 'boolean',
             'is_enabled' => 'boolean',
-            'last_value' => 'array',
+            'last_value' => 'json:unicode',
             'last_received_at' => 'datetime',
         ];
     }
@@ -65,6 +71,9 @@ final class MqttTopic extends Model
      */
     public function activityLogs(): HasMany
     {
-        return $this->hasMany(ActivityLog::class, 'mqtt_topic_id');
+        return $this->hasMany(
+            ActivityLog::class,
+            'mqtt_topic_id',
+        );
     }
 }

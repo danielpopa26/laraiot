@@ -12,6 +12,10 @@ it('publishes a raw MQTT command using the topic settings', function (): void {
     $mqttTopic = (new MqttTopic)->forceFill([
         'purpose' => 'command',
         'topic' => 'cmnd/solar1/POWER',
+        'payload_mapping' => [
+            'on' => 'ON',
+            'off' => 'OFF',
+        ],
         'qos' => 1,
         'retain' => true,
         'is_enabled' => true,
@@ -33,13 +37,27 @@ it('publishes a raw MQTT command using the topic settings', function (): void {
 
     $service = new MqttCommandService($publisher);
 
-    $service->send($mqttTopic, 'ON', 'laraiot-test');
+    $service->send(
+        $mqttTopic,
+        'on',
+        'laraiot-test',
+    );
 });
 
-it('encodes array payloads as JSON', function (): void {
+it('encodes configured array payloads as JSON', function (): void {
     $mqttTopic = (new MqttTopic)->forceFill([
         'purpose' => 'command',
         'topic' => 'devices/relay/command',
+        'payload_mapping' => [
+            'on' => [
+                'state' => 'ON',
+                'level' => 100,
+            ],
+            'off' => [
+                'state' => 'OFF',
+                'level' => 0,
+            ],
+        ],
         'qos' => 0,
         'retain' => false,
         'is_enabled' => true,
@@ -61,10 +79,10 @@ it('encodes array payloads as JSON', function (): void {
 
     $service = new MqttCommandService($publisher);
 
-    $service->send($mqttTopic, [
-        'state' => 'ON',
-        'level' => 100,
-    ]);
+    $service->send(
+        $mqttTopic,
+        'on',
+    );
 });
 
 it('rejects topics that are not command topics', function (): void {
@@ -84,7 +102,7 @@ it('rejects topics that are not command topics', function (): void {
     $service = new MqttCommandService($publisher);
 
     expect(
-        fn () => $service->send($mqttTopic, 'ON'),
+        fn () => $service->send($mqttTopic, 'on'),
     )->toThrow(
         InvalidMqttCommandException::class,
         'MQTT commands can only be sent through command topics.',
@@ -95,6 +113,10 @@ it('rejects disabled command topics', function (): void {
     $mqttTopic = (new MqttTopic)->forceFill([
         'purpose' => 'command',
         'topic' => 'cmnd/solar1/POWER',
+        'payload_mapping' => [
+            'on' => 'ON',
+            'off' => 'OFF',
+        ],
         'qos' => 0,
         'retain' => false,
         'is_enabled' => false,
@@ -108,7 +130,7 @@ it('rejects disabled command topics', function (): void {
     $service = new MqttCommandService($publisher);
 
     expect(
-        fn () => $service->send($mqttTopic, 'ON'),
+        fn () => $service->send($mqttTopic, 'on'),
     )->toThrow(
         InvalidMqttCommandException::class,
         'MQTT commands cannot be sent through a disabled topic.',

@@ -53,23 +53,13 @@ it('persists a processed MQTT message', function () {
 
     expect($handledTopics)->toBe(1)
         ->and($mqttTopic->last_payload)->toBe('ON')
-        ->and($mqttTopic->last_value)->toBe([
-            'configured_format' => 'raw',
-            'detected_format' => 'raw',
-            'extracted_value' => 'ON',
-            'normalized_value' => true,
-        ])
+        ->and($mqttTopic->last_value)->toBeTrue()
         ->and($mqttTopic->last_received_at)->not->toBeNull()
         ->and($mqttTopic->last_error)->toBeNull();
 });
 
 it('stores a payload processing error', function () {
-    $previousValue = [
-        'configured_format' => 'json',
-        'detected_format' => 'json',
-        'extracted_value' => 'ON',
-        'normalized_value' => true,
-    ];
+    $previousValue = true;
 
     $mqttTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
@@ -156,8 +146,8 @@ it('updates every enabled record using the received MQTT topic', function () {
     $secondTopic->refresh();
 
     expect($handledTopics)->toBe(2)
-        ->and($firstTopic->last_value['normalized_value'])->toBe('ON')
-        ->and($secondTopic->last_value['normalized_value'])->toBe(1)
+        ->and($firstTopic->last_value)->toBe('ON')
+        ->and($secondTopic->last_value)->toBe(1)
         ->and($firstTopic->last_received_at)->not->toBeNull()
         ->and($secondTopic->last_received_at)->not->toBeNull();
 });
@@ -176,11 +166,8 @@ it('ignores command MQTT topics', function () {
         'purpose' => 'command',
         'topic' => 'cmnd/test-controller/POWER1',
         'payload_mapping' => [
-            'format' => 'raw',
-            'command_map' => [
-                'on' => 'ON',
-                'off' => 'OFF',
-            ],
+            'on' => 'ON',
+            'off' => 'OFF',
         ],
         'qos' => 0,
         'retain' => false,

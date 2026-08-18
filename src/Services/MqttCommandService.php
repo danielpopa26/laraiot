@@ -16,14 +16,12 @@ final class MqttCommandService
     ) {}
 
     /**
-     * @param  string|array<array-key, mixed>  $payload
-     *
      * @throws InvalidMqttCommandException
      * @throws JsonException
      */
     public function send(
         MqttTopic $mqttTopic,
-        string|array $payload,
+        string $command,
         ?string $clientId = null,
     ): void {
         if ($mqttTopic->purpose !== 'command') {
@@ -38,9 +36,22 @@ final class MqttCommandService
             );
         }
 
+        $command = strtolower(trim($command));
+
+        if ($command === '') {
+            throw new InvalidMqttCommandException(
+                'The MQTT command must not be empty.',
+            );
+        }
+
+        $payload = $this->resolvePayload(
+            $mqttTopic,
+            $command,
+        );
+
         $this->publisher->publish(
             topic: $mqttTopic->topic,
-            payload: $this->preparePayload($payload),
+            payload: $payload,
             qos: $mqttTopic->qos,
             retain: $mqttTopic->retain,
             clientId: $clientId,
@@ -48,16 +59,44 @@ final class MqttCommandService
     }
 
     /**
-     * @param  string|array<array-key, mixed>  $payload
-     *
+     * @throws InvalidMqttCommandException
      * @throws JsonException
      */
-    private function preparePayload(string|array $payload): string
-    {
+    private function resolvePayload(
+        MqttTopic $mqttTopic,
+        string $command,
+    ): string {
+        $mapping = $mqttTopic->payload_mapping ?? [];
+
+        if (! array_key_exists($command, $mapping)) {
+            throw new InvalidMqttCommandException(
+                sprintf(
+                    'The MQTT command "%s" is not configured for this topic.',
+                    $command,
+                ),
+            );
+        }
+
+        $payload = $mapping[$command];
+
         if (is_string($payload)) {
             return $payload;
         }
 
-        return json_encode($payload, JSON_THROW_ON_ERROR);
+        if (is_array($payload)) {
+            return json_encode(
+                $payload,
+                JSON_THROW_ON_ERROR
+                    | JSON_UNESCAPED_UNICODE
+                    | JSON_UNESCAPED_SLASHES,
+            );
+        }
+
+        throw new InvalidMqttCommandException(
+            sprintf(
+                'The MQTT payload configured for command "%s" must be a string or an array.',
+                $command,
+            ),
+        );
     }
 }

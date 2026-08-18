@@ -223,12 +223,7 @@ it('forwards received MQTT messages to the message handler', function () {
     $mqttTopic->refresh();
 
     expect($mqttTopic->last_payload)->toBe('ON')
-        ->and($mqttTopic->last_value)->toBe([
-            'configured_format' => 'raw',
-            'detected_format' => 'raw',
-            'extracted_value' => 'ON',
-            'normalized_value' => true,
-        ])
+        ->and($mqttTopic->last_value)->toBeTrue()
         ->and($mqttTopic->last_received_at)->not->toBeNull()
         ->and($mqttTopic->last_error)->toBeNull();
 });
