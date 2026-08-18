@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::create('laraiot_activity_logs', function (Blueprint $table) {
             $table->id();
+
             $table->string('type', 50)->index();
 
             $table->foreignId('logical_device_id')
@@ -30,6 +31,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->json('data')->nullable();
             $table->timestamp('happened_at')->index();
+
             $table->timestamps();
         });
     }

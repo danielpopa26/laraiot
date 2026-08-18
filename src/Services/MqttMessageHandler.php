@@ -7,6 +7,7 @@ namespace Danpopa\LaraIoT\Services;
 use Danpopa\LaraIoT\Exceptions\InvalidMqttPayloadException;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 
 final class MqttMessageHandler
 {
@@ -18,6 +19,7 @@ final class MqttMessageHandler
     {
         $mqttTopics = MqttTopic::query()
             ->where('topic', $topic)
+            ->where('purpose', 'state')
             ->where('is_enabled', true)
             ->get();
 
@@ -40,14 +42,14 @@ final class MqttMessageHandler
         Carbon $receivedAt,
     ): void {
         try {
-            $processedValue = $this->payloadProcessor->process(
+            $processed = $this->payloadProcessor->process(
                 $payload,
                 $mqttTopic->payload_mapping ?? [],
             );
 
             $mqttTopic->update([
                 'last_payload' => $payload,
-                'last_value' => $processedValue,
+                'last_value' => $processed['normalized_value'],
                 'last_received_at' => $receivedAt,
                 'last_error' => null,
             ]);
@@ -56,6 +58,12 @@ final class MqttMessageHandler
                 'last_payload' => $payload,
                 'last_received_at' => $receivedAt,
                 'last_error' => $exception->getMessage(),
+            ]);
+
+            Log::warning('Invalid MQTT payload received.', [
+                'mqtt_topic_id' => $mqttTopic->getKey(),
+                'topic' => $mqttTopic->topic,
+                'error' => $exception->getMessage(),
             ]);
         }
     }

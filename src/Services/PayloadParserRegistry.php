@@ -6,17 +6,19 @@ namespace Danpopa\LaraIoT\Services;
 
 use Danpopa\LaraIoT\Contracts\PayloadParser;
 use Danpopa\LaraIoT\Exceptions\InvalidMqttPayloadException;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Contracts\Container\Container;
 
 final class PayloadParserRegistry
 {
     public function __construct(
         private readonly Container $container,
+        private readonly ConfigRepository $config,
     ) {}
 
     public function for(string $format): PayloadParser
     {
-        $parserClasses = config(
+        $parserClasses = $this->config->get(
             'laraiot.mqtt.payload_parsers',
             [],
         );

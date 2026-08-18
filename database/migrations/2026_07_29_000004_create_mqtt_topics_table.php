@@ -13,18 +13,14 @@ return new class extends Migration
         Schema::create('laraiot_mqtt_topics', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('physical_device_id')
-                ->constrained('laraiot_physical_devices')
-                ->cascadeOnDelete();
-
             $table->foreignId('logical_device_id')
-                ->nullable()
                 ->constrained('laraiot_logical_devices')
                 ->cascadeOnDelete();
 
             $table->string('purpose');
             $table->string('topic');
             $table->json('payload_mapping')->nullable();
+
             $table->unsignedTinyInteger('qos')->default(0);
             $table->boolean('retain')->default(false);
             $table->boolean('is_enabled')->default(true);

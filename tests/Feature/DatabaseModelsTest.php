@@ -21,11 +21,18 @@ it('runs the LaraIoT package migrations', function () {
         ->and(Schema::hasTable('laraiot_activity_logs'))->toBeTrue()
         ->and(Schema::hasTable('laraiot_settings'))->toBeTrue()
         ->and(Schema::hasColumns('laraiot_mqtt_topics', [
+            'logical_device_id',
             'last_payload',
             'last_value',
             'last_received_at',
             'last_error',
         ]))->toBeTrue()
+        ->and(
+            Schema::hasColumn(
+                'laraiot_mqtt_topics',
+                'physical_device_id',
+            ),
+        )->toBeFalse()
         ->and(Schema::hasColumns('laraiot_activity_logs', [
             'actor_type',
             'actor_id',
@@ -56,7 +63,6 @@ it('persists model casts and resolves relationships', function () {
     ]);
 
     $mqttTopic = MqttTopic::query()->create([
-        'physical_device_id' => $physicalDevice->getKey(),
         'logical_device_id' => $logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'laraiot/device-01/relay-01/state',
@@ -105,6 +111,11 @@ it('persists model casts and resolves relationships', function () {
                 ->is($mqttTopic),
         )->toBeTrue()
         ->and(
+            $mqttTopic->logicalDevice()
+                ->firstOrFail()
+                ->is($logicalDevice),
+        )->toBeTrue()
+        ->and(
             $mqttTopic->activityLogs()
                 ->firstOrFail()
                 ->is($activityLog),
@@ -116,37 +127,78 @@ it('persists model casts and resolves relationships', function () {
         )->toBeTrue();
 });
 
-it('creates and reuses the current application settings', function () {
-    config()->set([
-        'laraiot.mode' => 'websocket',
-        'laraiot.polling.interval' => 5,
-        'laraiot.timezone' => 'Europe/Bucharest',
+it('deletes MQTT topics with their logical device', function () {
+    $deviceType = DeviceType::query()->create([
+        'identifier' => 'cascade-relay',
+        'name' => 'Cascade relay',
+        'is_enabled' => true,
     ]);
 
+    $physicalDevice = PhysicalDevice::query()->create([
+        'identifier' => 'cascade-controller',
+        'name' => 'Cascade controller',
+        'is_enabled' => true,
+    ]);
+
+    $logicalDevice = LogicalDevice::query()->create([
+        'physical_device_id' => $physicalDevice->getKey(),
+        'device_type_id' => $deviceType->getKey(),
+        'identifier' => 'cascade-logical-relay',
+        'name' => 'Cascade logical relay',
+        'is_enabled' => true,
+    ]);
+
+    $mqttTopic = $logicalDevice->mqttTopics()->create([
+        'purpose' => 'state',
+        'topic' => 'test/cascade/state',
+        'is_enabled' => true,
+    ]);
+
+    $logicalDevice->delete();
+
+    expect(
+        MqttTopic::query()
+            ->whereKey($mqttTopic->getKey())
+            ->exists(),
+    )->toBeFalse();
+});
+
+it('returns the current singleton application settings', function () {
     $settings = ApplicationSetting::current();
     $sameSettings = ApplicationSetting::current();
 
     expect($sameSettings->is($settings))->toBeTrue()
+        ->and($settings->getKey())
+        ->toBe(ApplicationSetting::SINGLETON_ID)
         ->and(ApplicationSetting::query()->count())->toBe(1)
         ->and($settings->getAttribute('application_mode'))
-        ->toBe('websocket')
-        ->and($settings->getAttribute('polling_interval'))->toBe(5)
-        ->and($settings->getAttribute('timezone'))
-        ->toBe('Europe/Bucharest')
+        ->toBe(ApplicationSetting::MODE_POLLING)
+        ->and($settings->getAttribute('polling_interval'))->toBe(10)
+        ->and($settings->getAttribute('timezone'))->toBe('UTC')
         ->and($settings->getAttribute('date_format'))->toBe('d M Y')
-        ->and($settings->getAttribute('time_format'))->toBe('H:i:s');
+        ->and($settings->getAttribute('time_format'))->toBe('H:i:s')
+        ->and(ApplicationSetting::defaults())->toBe([
+            'application_mode' => ApplicationSetting::MODE_POLLING,
+            'polling_interval' => 10,
+            'timezone' => 'UTC',
+            'date_format' => 'd M Y',
+            'time_format' => 'H:i:s',
+        ]);
 });
 
-it('normalizes invalid application setting values', function () {
-    config()->set([
-        'laraiot.mode' => 'invalid',
-        'laraiot.polling.interval' => 0,
-        'laraiot.timezone' => '',
-    ]);
-
+it('detects whether the current application settings use websocket mode', function () {
     $settings = ApplicationSetting::current();
 
-    expect($settings->getAttribute('application_mode'))->toBe('polling')
-        ->and($settings->getAttribute('polling_interval'))->toBe(1)
-        ->and($settings->getAttribute('timezone'))->toBe('UTC');
+    expect($settings->usesWebsocket())->toBeFalse();
+
+    $settings->update([
+        'application_mode' => ApplicationSetting::MODE_WEBSOCKET,
+    ]);
+
+    $settings->refresh();
+
+    expect($settings->usesWebsocket())->toBeTrue()
+        ->and($settings->getAttribute('application_mode'))
+        ->toBe(ApplicationSetting::MODE_WEBSOCKET)
+        ->and(ApplicationSetting::query()->count())->toBe(1);
 });
