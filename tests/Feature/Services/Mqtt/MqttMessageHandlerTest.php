@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Danpopa\LaraIoT\Models\ActivityLog;
 use Danpopa\LaraIoT\Models\DeviceType;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
@@ -29,7 +30,7 @@ beforeEach(function () {
     ]);
 });
 
-it('persists a processed MQTT message', function () {
+it('persists a processed MQTT message and records the first state activity', function () {
     $mqttTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
@@ -45,20 +46,31 @@ it('persists a processed MQTT message', function () {
         'is_enabled' => true,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
         ->handle('test/device/state', 'ON');
 
     $mqttTopic->refresh();
+    $activity = ActivityLog::query()->sole();
 
     expect($handledTopics)->toBe(1)
         ->and($mqttTopic->last_payload)->toBe('ON')
         ->and($mqttTopic->last_value)->toBeTrue()
         ->and($mqttTopic->last_received_at)->not->toBeNull()
-        ->and($mqttTopic->last_error)->toBeNull();
+        ->and($mqttTopic->last_error)->toBeNull()
+        ->and($activity->type)->toBe('state')
+        ->and($activity->logical_device_id)
+        ->toBe($this->logicalDevice->getKey())
+        ->and($activity->mqtt_topic_id)->toBe($mqttTopic->getKey())
+        ->and($activity->title)->toBe('Test logical relay state updated')
+        ->and($activity->data['topic'])->toBe('test/device/state')
+        ->and($activity->data['raw_payload'])->toBe('ON')
+        ->and($activity->data['normalized_value'])->toBeTrue();
 });
 
-it('stores a payload processing error', function () {
+it('stores a payload processing error and records an error activity', function () {
     $previousValue = true;
 
     $mqttTopic = MqttTopic::query()->create([
@@ -74,17 +86,28 @@ it('stores a payload processing error', function () {
         'last_value' => $previousValue,
     ]);
 
+    $mqttTopic->markAsValidated();
+
+    $payload = '{"state":';
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
-        ->handle('test/device/json', '{"state":');
+        ->handle('test/device/json', $payload);
 
     $mqttTopic->refresh();
+    $activity = ActivityLog::query()->sole();
 
     expect($handledTopics)->toBe(1)
-        ->and($mqttTopic->last_payload)->toBe('{"state":')
+        ->and($mqttTopic->last_payload)->toBe($payload)
         ->and($mqttTopic->last_value)->toBe($previousValue)
         ->and($mqttTopic->last_received_at)->not->toBeNull()
         ->and($mqttTopic->last_error)
+        ->toBe('The received payload is not valid JSON.')
+        ->and($activity->type)->toBe('error')
+        ->and($activity->mqtt_topic_id)->toBe($mqttTopic->getKey())
+        ->and($activity->title)->toBe('MQTT state processing failed')
+        ->and($activity->data['raw_payload'])->toBe($payload)
+        ->and($activity->data['error'])
         ->toBe('The received payload is not valid JSON.');
 });
 
@@ -100,6 +123,8 @@ it('ignores disabled MQTT topics', function () {
         'is_enabled' => false,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
         ->handle('test/device/disabled', 'ON');
@@ -109,10 +134,11 @@ it('ignores disabled MQTT topics', function () {
     expect($handledTopics)->toBe(0)
         ->and($mqttTopic->last_payload)->toBeNull()
         ->and($mqttTopic->last_value)->toBeNull()
-        ->and($mqttTopic->last_received_at)->toBeNull();
+        ->and($mqttTopic->last_received_at)->toBeNull()
+        ->and(ActivityLog::query()->count())->toBe(0);
 });
 
-it('updates every enabled record using the received MQTT topic', function () {
+it('updates every enabled validated state record using the received MQTT topic', function () {
     $firstTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
@@ -123,6 +149,8 @@ it('updates every enabled record using the received MQTT topic', function () {
         'qos' => 0,
         'is_enabled' => true,
     ]);
+
+    $firstTopic->markAsValidated();
 
     $secondTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
@@ -138,6 +166,8 @@ it('updates every enabled record using the received MQTT topic', function () {
         'is_enabled' => true,
     ]);
 
+    $secondTopic->markAsValidated();
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
         ->handle('test/shared/state', 'ON');
@@ -149,7 +179,83 @@ it('updates every enabled record using the received MQTT topic', function () {
         ->and($firstTopic->last_value)->toBe('ON')
         ->and($secondTopic->last_value)->toBe(1)
         ->and($firstTopic->last_received_at)->not->toBeNull()
-        ->and($secondTopic->last_received_at)->not->toBeNull();
+        ->and($secondTopic->last_received_at)->not->toBeNull()
+        ->and(ActivityLog::query()->where('type', 'state')->count())->toBe(2);
+});
+
+it('records a new state activity when the normalized value changes', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'test/device/change',
+        'payload_mapping' => [
+            'format' => 'raw',
+            'value_map' => [
+                'ON' => true,
+                'OFF' => false,
+            ],
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    $mqttTopic->markAsValidated();
+
+    $handler = $this->app->make(MqttMessageHandler::class);
+
+    $handler->handle('test/device/change', 'ON');
+    $handler->handle('test/device/change', 'OFF');
+
+    $activities = ActivityLog::query()
+        ->where('type', 'state')
+        ->oldest('id')
+        ->get();
+
+    expect($activities)->toHaveCount(2)
+        ->and($activities[0]->data['normalized_value'])->toBeTrue()
+        ->and($activities[1]->data['normalized_value'])->toBeFalse()
+        ->and($mqttTopic->fresh()->last_value)->toBeFalse();
+});
+
+it('does not duplicate state activity when the normalized value is unchanged', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'test/device/repeated',
+        'payload_mapping' => [
+            'format' => 'json',
+            'value_path' => 'state',
+            'value_map' => [
+                'ON' => true,
+                'OFF' => false,
+            ],
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    $mqttTopic->markAsValidated();
+
+    $handler = $this->app->make(MqttMessageHandler::class);
+
+    $handler->handle(
+        'test/device/repeated',
+        '{"state":"ON","sequence":1}',
+    );
+
+    $secondPayload = '{"state":"ON","sequence":2}';
+
+    $handler->handle(
+        'test/device/repeated',
+        $secondPayload,
+    );
+
+    $mqttTopic->refresh();
+
+    expect(ActivityLog::query()->where('type', 'state')->count())->toBe(1)
+        ->and($mqttTopic->last_payload)->toBe($secondPayload)
+        ->and($mqttTopic->last_value)->toBeTrue()
+        ->and($mqttTopic->last_received_at)->not->toBeNull();
 });
 
 it('ignores MQTT messages for unknown topics', function () {
@@ -157,7 +263,8 @@ it('ignores MQTT messages for unknown topics', function () {
         ->make(MqttMessageHandler::class)
         ->handle('unknown/device/state', 'ON');
 
-    expect($handledTopics)->toBe(0);
+    expect($handledTopics)->toBe(0)
+        ->and(ActivityLog::query()->count())->toBe(0);
 });
 
 it('ignores command MQTT topics', function () {
@@ -174,6 +281,8 @@ it('ignores command MQTT topics', function () {
         'is_enabled' => true,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = app(MqttMessageHandler::class)->handle(
         'cmnd/test-controller/POWER1',
         'ON',
@@ -185,5 +294,36 @@ it('ignores command MQTT topics', function () {
         ->and($mqttTopic->last_payload)->toBeNull()
         ->and($mqttTopic->last_value)->toBeNull()
         ->and($mqttTopic->last_received_at)->toBeNull()
-        ->and($mqttTopic->last_error)->toBeNull();
+        ->and($mqttTopic->last_error)->toBeNull()
+        ->and(ActivityLog::query()->count())->toBe(0);
+});
+
+it('ignores unvalidated MQTT state topics', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'test/device/unvalidated',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    $handledTopics = $this->app
+        ->make(MqttMessageHandler::class)
+        ->handle(
+            'test/device/unvalidated',
+            'ON',
+        );
+
+    $mqttTopic->refresh();
+
+    expect($handledTopics)->toBe(0)
+        ->and($mqttTopic->validated_at)->toBeNull()
+        ->and($mqttTopic->last_payload)->toBeNull()
+        ->and($mqttTopic->last_value)->toBeNull()
+        ->and($mqttTopic->last_received_at)->toBeNull()
+        ->and($mqttTopic->last_error)->toBeNull()
+        ->and(ActivityLog::query()->count())->toBe(0);
 });

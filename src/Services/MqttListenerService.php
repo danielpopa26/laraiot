@@ -122,7 +122,9 @@ final class MqttListenerService
     private function desiredSubscriptions(): array
     {
         $mqttTopics = MqttTopic::query()
+            ->where('purpose', 'state')
             ->where('is_enabled', true)
+            ->whereNotNull('validated_at')
             ->where('topic', '!=', '')
             ->select('topic')
             ->selectRaw('MAX(qos) AS qos')

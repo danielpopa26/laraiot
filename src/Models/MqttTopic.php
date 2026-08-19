@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int $qos
  * @property bool $retain
  * @property bool $is_enabled
+ * @property Carbon|null $validated_at
  * @property string|null $last_payload
  * @property mixed $last_value
  * @property Carbon|null $last_received_at
@@ -50,9 +51,35 @@ final class MqttTopic extends Model
             'qos' => 'integer',
             'retain' => 'boolean',
             'is_enabled' => 'boolean',
+            'validated_at' => 'datetime',
             'last_value' => 'json:unicode',
             'last_received_at' => 'datetime',
         ];
+    }
+
+    public function isValidated(): bool
+    {
+        return $this->validated_at !== null;
+    }
+
+    public function isUsable(): bool
+    {
+        return $this->is_enabled
+            && $this->isValidated();
+    }
+
+    public function markAsValidated(): void
+    {
+        $this->forceFill([
+            'validated_at' => Carbon::now(),
+        ])->saveQuietly();
+    }
+
+    public function invalidateValidation(): void
+    {
+        $this->forceFill([
+            'validated_at' => null,
+        ])->saveQuietly();
     }
 
     /**

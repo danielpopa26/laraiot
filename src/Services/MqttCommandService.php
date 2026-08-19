@@ -24,6 +24,12 @@ final class MqttCommandService
         string $command,
         ?string $clientId = null,
     ): void {
+        if (! $mqttTopic->exists) {
+            throw new InvalidMqttCommandException(
+                'MQTT commands can only be sent through a saved topic.',
+            );
+        }
+
         if ($mqttTopic->purpose !== 'command') {
             throw new InvalidMqttCommandException(
                 'MQTT commands can only be sent through command topics.',
@@ -33,6 +39,12 @@ final class MqttCommandService
         if (! $mqttTopic->is_enabled) {
             throw new InvalidMqttCommandException(
                 'MQTT commands cannot be sent through a disabled topic.',
+            );
+        }
+
+        if (! $mqttTopic->isValidated()) {
+            throw new InvalidMqttCommandException(
+                'MQTT commands cannot be sent through an unvalidated topic.',
             );
         }
 
