@@ -75,6 +75,10 @@ class LaraIoTServiceProvider extends ServiceProvider
         ], ['laraiot', 'laraiot-views']);
 
         $this->publishes([
+            __DIR__.'/../resources/js/LaraIoT' => resource_path('js/LaraIoT'),
+        ], ['laraiot', 'laraiot-ui']);
+
+        $this->publishes([
             __DIR__.'/../lang' => $this->app->langPath('vendor/laraiot'),
         ], ['laraiot', 'laraiot-lang']);
 

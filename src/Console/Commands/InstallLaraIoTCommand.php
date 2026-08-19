@@ -53,6 +53,12 @@ class InstallLaraIoTCommand extends Command
             '--tag' => 'laraiot-migrations',
             '--force' => (bool) $this->option('force'),
         ]);
+
+
+        $this->call('vendor:publish', [
+            '--tag' => 'laraiot-ui',
+            '--force' => (bool) $this->option('force'),
+        ]);
     }
 
     private function installReverb(): void
