@@ -45,6 +45,8 @@ it('persists a processed MQTT message', function () {
         'is_enabled' => true,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
         ->handle('test/device/state', 'ON');
@@ -74,6 +76,8 @@ it('stores a payload processing error', function () {
         'last_value' => $previousValue,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
         ->handle('test/device/json', '{"state":');
@@ -100,6 +104,8 @@ it('ignores disabled MQTT topics', function () {
         'is_enabled' => false,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
         ->handle('test/device/disabled', 'ON');
@@ -112,7 +118,7 @@ it('ignores disabled MQTT topics', function () {
         ->and($mqttTopic->last_received_at)->toBeNull();
 });
 
-it('updates every enabled record using the received MQTT topic', function () {
+it('updates every enabled validated state record using the received MQTT topic', function () {
     $firstTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
@@ -123,6 +129,8 @@ it('updates every enabled record using the received MQTT topic', function () {
         'qos' => 0,
         'is_enabled' => true,
     ]);
+
+    $firstTopic->markAsValidated();
 
     $secondTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
@@ -137,6 +145,8 @@ it('updates every enabled record using the received MQTT topic', function () {
         'qos' => 1,
         'is_enabled' => true,
     ]);
+
+    $secondTopic->markAsValidated();
 
     $handledTopics = $this->app
         ->make(MqttMessageHandler::class)
@@ -174,6 +184,8 @@ it('ignores command MQTT topics', function () {
         'is_enabled' => true,
     ]);
 
+    $mqttTopic->markAsValidated();
+
     $handledTopics = app(MqttMessageHandler::class)->handle(
         'cmnd/test-controller/POWER1',
         'ON',
@@ -182,6 +194,35 @@ it('ignores command MQTT topics', function () {
     $mqttTopic->refresh();
 
     expect($handledTopics)->toBe(0)
+        ->and($mqttTopic->last_payload)->toBeNull()
+        ->and($mqttTopic->last_value)->toBeNull()
+        ->and($mqttTopic->last_received_at)->toBeNull()
+        ->and($mqttTopic->last_error)->toBeNull();
+});
+
+it('ignores unvalidated MQTT state topics', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'test/device/unvalidated',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    $handledTopics = $this->app
+        ->make(MqttMessageHandler::class)
+        ->handle(
+            'test/device/unvalidated',
+            'ON',
+        );
+
+    $mqttTopic->refresh();
+
+    expect($handledTopics)->toBe(0)
+        ->and($mqttTopic->validated_at)->toBeNull()
         ->and($mqttTopic->last_payload)->toBeNull()
         ->and($mqttTopic->last_value)->toBeNull()
         ->and($mqttTopic->last_received_at)->toBeNull()

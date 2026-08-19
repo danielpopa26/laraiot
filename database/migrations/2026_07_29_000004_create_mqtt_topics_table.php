@@ -24,6 +24,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('qos')->default(0);
             $table->boolean('retain')->default(false);
             $table->boolean('is_enabled')->default(true);
+            $table->timestamp('validated_at')->nullable();
 
             $table->longText('last_payload')->nullable();
             $table->json('last_value')->nullable();

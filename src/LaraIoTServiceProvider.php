@@ -9,6 +9,8 @@ use Danpopa\LaraIoT\Console\Commands\ListenMqttCommand;
 use Danpopa\LaraIoT\Console\Commands\PublishMqttCommand;
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
 use Danpopa\LaraIoT\Contracts\MqttPublisher as MqttPublisherContract;
+use Danpopa\LaraIoT\Models\MqttTopic;
+use Danpopa\LaraIoT\Observers\MqttTopicObserver;
 use Danpopa\LaraIoT\Services\MqttConnectionService;
 use Danpopa\LaraIoT\Services\MqttPublisher;
 use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
@@ -50,6 +52,8 @@ class LaraIoTServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'laraiot');
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'laraiot');
+
+        MqttTopic::observe(MqttTopicObserver::class);
 
         if (! $this->app->runningInConsole()) {
             return;

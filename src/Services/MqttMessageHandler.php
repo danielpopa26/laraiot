@@ -21,6 +21,7 @@ final class MqttMessageHandler
             ->where('topic', $topic)
             ->where('purpose', 'state')
             ->where('is_enabled', true)
+            ->whereNotNull('validated_at')
             ->get();
 
         $receivedAt = Carbon::now();

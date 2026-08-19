@@ -19,7 +19,10 @@ it('publishes a raw MQTT command using the topic settings', function (): void {
         'qos' => 1,
         'retain' => true,
         'is_enabled' => true,
+        'validated_at' => now(),
     ]);
+
+    $mqttTopic->exists = true;
 
     /** @var MqttPublisher&MockInterface $publisher */
     $publisher = Mockery::mock(MqttPublisher::class);
@@ -61,7 +64,10 @@ it('encodes configured array payloads as JSON', function (): void {
         'qos' => 0,
         'retain' => false,
         'is_enabled' => true,
+        'validated_at' => now(),
     ]);
+
+    $mqttTopic->exists = true;
 
     /** @var MqttPublisher&MockInterface $publisher */
     $publisher = Mockery::mock(MqttPublisher::class);
@@ -94,6 +100,8 @@ it('rejects topics that are not command topics', function (): void {
         'is_enabled' => true,
     ]);
 
+    $mqttTopic->exists = true;
+
     /** @var MqttPublisher&MockInterface $publisher */
     $publisher = Mockery::mock(MqttPublisher::class);
 
@@ -122,6 +130,8 @@ it('rejects disabled command topics', function (): void {
         'is_enabled' => false,
     ]);
 
+    $mqttTopic->exists = true;
+
     /** @var MqttPublisher&MockInterface $publisher */
     $publisher = Mockery::mock(MqttPublisher::class);
 
@@ -134,5 +144,64 @@ it('rejects disabled command topics', function (): void {
     )->toThrow(
         InvalidMqttCommandException::class,
         'MQTT commands cannot be sent through a disabled topic.',
+    );
+});
+
+it('rejects unsaved command topics', function (): void {
+    $mqttTopic = (new MqttTopic)->forceFill([
+        'purpose' => 'command',
+        'topic' => 'cmnd/solar1/POWER',
+        'payload_mapping' => [
+            'on' => 'ON',
+            'off' => 'OFF',
+        ],
+        'qos' => 0,
+        'retain' => false,
+        'is_enabled' => true,
+        'validated_at' => now(),
+    ]);
+
+    /** @var MqttPublisher&MockInterface $publisher */
+    $publisher = Mockery::mock(MqttPublisher::class);
+
+    $publisher->shouldNotReceive('publish');
+
+    $service = new MqttCommandService($publisher);
+
+    expect(
+        fn () => $service->send($mqttTopic, 'on'),
+    )->toThrow(
+        InvalidMqttCommandException::class,
+        'MQTT commands can only be sent through a saved topic.',
+    );
+});
+
+it('rejects unvalidated command topics', function (): void {
+    $mqttTopic = (new MqttTopic)->forceFill([
+        'purpose' => 'command',
+        'topic' => 'cmnd/solar1/POWER',
+        'payload_mapping' => [
+            'on' => 'ON',
+            'off' => 'OFF',
+        ],
+        'qos' => 0,
+        'retain' => false,
+        'is_enabled' => true,
+    ]);
+
+    $mqttTopic->exists = true;
+
+    /** @var MqttPublisher&MockInterface $publisher */
+    $publisher = Mockery::mock(MqttPublisher::class);
+
+    $publisher->shouldNotReceive('publish');
+
+    $service = new MqttCommandService($publisher);
+
+    expect(
+        fn () => $service->send($mqttTopic, 'on'),
+    )->toThrow(
+        InvalidMqttCommandException::class,
+        'MQTT commands cannot be sent through an unvalidated topic.',
     );
 });

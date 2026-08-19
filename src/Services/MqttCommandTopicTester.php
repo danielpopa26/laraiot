@@ -227,6 +227,12 @@ final class MqttCommandTopicTester
             );
         }
 
+        if (! $stateTopic->isValidated()) {
+            throw new InvalidArgumentException(
+                'Command topic testing requires a validated state MQTT topic.',
+            );
+        }
+
         if (
             $stateTopic->payload_mapping === null
             || $stateTopic->payload_mapping === []

@@ -42,8 +42,8 @@ beforeEach(function () {
     ]);
 });
 
-it('subscribes once to each enabled MQTT topic using its highest QoS', function () {
-    MqttTopic::query()->create([
+it('subscribes once to each enabled validated state MQTT topic using its highest QoS', function () {
+    $firstTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/shared/state',
@@ -54,7 +54,9 @@ it('subscribes once to each enabled MQTT topic using its highest QoS', function 
         'is_enabled' => true,
     ]);
 
-    MqttTopic::query()->create([
+    $firstTopic->markAsValidated();
+
+    $secondTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/shared/state',
@@ -65,7 +67,9 @@ it('subscribes once to each enabled MQTT topic using its highest QoS', function 
         'is_enabled' => true,
     ]);
 
-    MqttTopic::query()->create([
+    $secondTopic->markAsValidated();
+
+    $disabledTopic = MqttTopic::query()->create([
         'logical_device_id' => $this->logicalDevice->getKey(),
         'purpose' => 'state',
         'topic' => 'test/disabled/state',
@@ -75,6 +79,34 @@ it('subscribes once to each enabled MQTT topic using its highest QoS', function 
         'qos' => 2,
         'is_enabled' => false,
     ]);
+
+    $disabledTopic->markAsValidated();
+
+    MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'test/unvalidated/state',
+        'payload_mapping' => [
+            'format' => 'raw',
+        ],
+        'qos' => 2,
+        'is_enabled' => true,
+    ]);
+
+    $commandTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'command',
+        'topic' => 'test/device/command',
+        'payload_mapping' => [
+            'on' => 'ON',
+            'off' => 'OFF',
+        ],
+        'qos' => 2,
+        'retain' => false,
+        'is_enabled' => true,
+    ]);
+
+    $commandTopic->markAsValidated();
 
     $client = Mockery::mock(MqttClientContract::class);
 
@@ -149,6 +181,8 @@ it('forwards received MQTT messages to the message handler', function () {
         'qos' => 1,
         'is_enabled' => true,
     ]);
+
+    $mqttTopic->markAsValidated();
 
     $messageCallback = null;
 
@@ -240,6 +274,8 @@ it('synchronizes MQTT subscriptions while the listener is running', function () 
         'is_enabled' => true,
     ]);
 
+    $firstTopic->markAsValidated();
+
     $loopHandler = null;
     $logicalDeviceId = $this->logicalDevice->getKey();
 
@@ -300,7 +336,7 @@ it('synchronizes MQTT subscriptions while the listener is running', function () 
                 'is_enabled' => false,
             ]);
 
-            MqttTopic::query()->create([
+            $secondTopic = MqttTopic::query()->create([
                 'logical_device_id' => $logicalDeviceId,
                 'purpose' => 'state',
                 'topic' => 'test/second/state',
@@ -310,6 +346,8 @@ it('synchronizes MQTT subscriptions while the listener is running', function () 
                 'qos' => 2,
                 'is_enabled' => true,
             ]);
+
+            $secondTopic->markAsValidated();
 
             expect($loopHandler)->not->toBeNull();
 
