@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Services;
 
+use Danpopa\LaraIoT\Events\LogicalDeviceStateUpdated;
 use Danpopa\LaraIoT\Exceptions\InvalidMqttPayloadException;
 use Danpopa\LaraIoT\Models\ActivityLog;
+use Danpopa\LaraIoT\Models\ApplicationSetting;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -75,14 +77,14 @@ final class MqttMessageHandler
                 'mqtt_topic_id' => $mqttTopic->getKey(),
                 'title' => sprintf(
                     '%s state updated',
-                    $logicalDevice?->name ?? 'MQTT topic',
+                    $logicalDevice->name,
                 ),
                 'description' => sprintf(
                     '%s → %s',
                     $mqttTopic->topic,
                     $this->formatActivityValue(
                         $normalizedValue,
-                        $logicalDevice?->unit,
+                        $logicalDevice->unit,
                     ),
                 ),
                 'data' => [
@@ -92,6 +94,12 @@ final class MqttMessageHandler
                 ],
                 'happened_at' => $receivedAt,
             ]);
+
+            $this->broadcastStateUpdate(
+                $mqttTopic,
+                $normalizedValue,
+                $receivedAt,
+            );
         } catch (InvalidMqttPayloadException $exception) {
             $mqttTopic->update([
                 'last_payload' => $payload,
@@ -116,6 +124,31 @@ final class MqttMessageHandler
             Log::warning('Invalid MQTT payload received.', [
                 'mqtt_topic_id' => $mqttTopic->getKey(),
                 'topic' => $mqttTopic->topic,
+                'error' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    private function broadcastStateUpdate(
+        MqttTopic $mqttTopic,
+        mixed $normalizedValue,
+        Carbon $receivedAt,
+    ): void {
+        try {
+            if (! ApplicationSetting::current()->usesWebsocket()) {
+                return;
+            }
+
+            event(new LogicalDeviceStateUpdated(
+                logicalDeviceId: (int) $mqttTopic->logical_device_id,
+                mqttTopicId: (int) $mqttTopic->getKey(),
+                value: $normalizedValue,
+                receivedAt: $receivedAt->toIso8601String(),
+            ));
+        } catch (Throwable $exception) {
+            Log::error('Logical device state could not be broadcast.', [
+                'logical_device_id' => $mqttTopic->logical_device_id,
+                'mqtt_topic_id' => $mqttTopic->getKey(),
                 'error' => $exception->getMessage(),
             ]);
         }

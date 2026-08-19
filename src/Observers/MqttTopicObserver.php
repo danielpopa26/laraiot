@@ -14,7 +14,7 @@ final class MqttTopicObserver
      *
      * @var list<string>
      */
-    private const VALIDATION_SENSITIVE_FIELDS = [
+    private const array VALIDATION_SENSITIVE_FIELDS = [
         'logical_device_id',
         'purpose',
         'topic',

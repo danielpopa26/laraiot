@@ -86,4 +86,4 @@ it('registers and executes the installation command', function () {
         ->expectsOutputToContain('LaraIoT installed successfully.')
         ->expectsOutputToContain('php artisan migrate')
         ->assertSuccessful();
-});
+})->group('install');

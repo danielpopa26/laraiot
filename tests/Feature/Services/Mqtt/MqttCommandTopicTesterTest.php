@@ -138,22 +138,20 @@ it('validates both on and off commands against the state topic', function () {
 
     $factory->shouldReceive('create')
         ->once()
-        ->withArgs(fn (string $host, int $port, ?string $clientId): bool =>
-            $host === '127.0.0.1'
+        ->withArgs(fn (string $host, int $port, ?string $clientId): bool => $host === '127.0.0.1'
             && $port === 1883
             && is_string($clientId)
-            && str_contains($clientId, '-command-on-')
+            && str_contains($clientId, '-command-on-'),
         )
         ->andReturn($onClient)
         ->ordered();
 
     $factory->shouldReceive('create')
         ->once()
-        ->withArgs(fn (string $host, int $port, ?string $clientId): bool =>
-            $host === '127.0.0.1'
+        ->withArgs(fn (string $host, int $port, ?string $clientId): bool => $host === '127.0.0.1'
             && $port === 1883
             && is_string($clientId)
-            && str_contains($clientId, '-command-off-')
+            && str_contains($clientId, '-command-off-'),
         )
         ->andReturn($offClient)
         ->ordered();
@@ -193,6 +191,7 @@ it('ignores a retained state before accepting a fresh command confirmation', fun
         ->once()
         ->withArgs(function (string $topic, callable $callback, int $qos) use (&$onCallback): bool {
             $onCallback = $callback;
+
             return $topic === 'test/device/state' && $qos === 1;
         })
         ->andReturnNull();
@@ -253,6 +252,7 @@ it('times out when the expected command state is not observed', function () {
         ->once()
         ->withArgs(function (string $topic, callable $callback, int $qos) use (&$messageCallback): bool {
             $messageCallback = $callback;
+
             return $topic === 'test/device/state' && $qos === 1;
         })
         ->andReturnNull();
@@ -264,6 +264,7 @@ it('times out when the expected command state is not observed', function () {
         ->once()
         ->withArgs(function (Closure $callback) use (&$loopHandler): bool {
             $loopHandler = $callback;
+
             return true;
         })
         ->andReturn($client);

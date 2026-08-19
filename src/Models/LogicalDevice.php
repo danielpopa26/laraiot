@@ -8,6 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $physical_device_id
+ * @property int $device_type_id
+ * @property string $identifier
+ * @property string $name
+ * @property mixed $last_value
+ * @property string|null $unit
+ * @property bool $is_enabled
+ */
 class LogicalDevice extends Model
 {
     protected $table = 'laraiot_logical_devices';

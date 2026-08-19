@@ -361,7 +361,7 @@ it('rejects invalid state topic configuration before connecting to MQTT', functi
     expect(
         fn () => $service->validateStateTopic($commandTopic),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'Only MQTT state topics can be validated as state topics.',
     );
 
@@ -371,7 +371,7 @@ it('rejects invalid state topic configuration before connecting to MQTT', functi
     expect(
         fn () => $service->validateStateTopic($disabledStateTopic),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'A disabled MQTT state topic cannot be validated.',
     );
 
@@ -381,7 +381,7 @@ it('rejects invalid state topic configuration before connecting to MQTT', functi
     expect(
         fn () => $service->validateStateTopic($missingMappingTopic),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'The MQTT state topic payload mapping is not configured.',
     );
 });
@@ -405,7 +405,7 @@ it('rejects unsaved topics before validation', function () {
     expect(
         fn () => $service->validateStateTopic($stateTopic),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'The MQTT topic must be saved before it can be validated.',
     );
 });
@@ -554,7 +554,7 @@ it('rejects command validation without a usable state topic', function () {
             $stateTopic,
         ),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'Command topic validation requires an enabled and validated state topic.',
     );
 });
@@ -578,7 +578,7 @@ it('requires command and state topics to belong to the same logical device', fun
             $stateTopic,
         ),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'The command topic and state topic must belong to the same logical device.',
     );
 });
@@ -605,7 +605,7 @@ it('requires both on and off command payloads', function () {
             $stateTopic,
         ),
     )->toThrow(
-        \InvalidArgumentException::class,
+        InvalidArgumentException::class,
         'The MQTT payload for command "off" is not configured.',
     );
 });

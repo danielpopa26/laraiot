@@ -53,8 +53,7 @@ final class MqttTopicValidationService
         $result = $this->stateTopicTester->test(
             topic: $stateTopic->topic,
             qos: $stateTopic->qos,
-            payloadConfiguration:
-                $stateTopic->payload_mapping,
+            payloadConfiguration: $stateTopic->payload_mapping,
         );
 
         $stateTopic->markAsValidated();

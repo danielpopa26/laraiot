@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT;
 
-use Danpopa\LaraIoT\Console\Commands\InstallCommand;
+use Danpopa\LaraIoT\Console\Commands\InstallLaraIoTCommand;
 use Danpopa\LaraIoT\Console\Commands\ListenMqttCommand;
 use Danpopa\LaraIoT\Console\Commands\PublishMqttCommand;
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
 use Danpopa\LaraIoT\Contracts\MqttPublisher as MqttPublisherContract;
+use Danpopa\LaraIoT\Events\LogicalDeviceStateUpdated;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Observers\MqttTopicObserver;
 use Danpopa\LaraIoT\Services\MqttConnectionService;
 use Danpopa\LaraIoT\Services\MqttPublisher;
 use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\ServiceProvider;
 
 class LaraIoTServiceProvider extends ServiceProvider
@@ -55,6 +57,11 @@ class LaraIoTServiceProvider extends ServiceProvider
 
         MqttTopic::observe(MqttTopicObserver::class);
 
+        Broadcast::channel(
+            LogicalDeviceStateUpdated::CHANNEL,
+            static fn (mixed $user): bool => $user !== null,
+        );
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -80,7 +87,7 @@ class LaraIoTServiceProvider extends ServiceProvider
         ], ['laraiot', 'laraiot-migrations']);
 
         $this->commands([
-            InstallCommand::class,
+            InstallLaraIoTCommand::class,
             ListenMqttCommand::class,
             PublishMqttCommand::class,
         ]);

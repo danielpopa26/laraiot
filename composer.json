@@ -20,8 +20,10 @@
     ],
     "require": {
         "php": "^8.3",
+        "illuminate/broadcasting": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
+        "laravel/reverb": "^1.11",
         "php-mqtt/client": "^2.3"
     },
     "require-dev": {
@@ -76,7 +78,8 @@
             "vendor/bin/pest --type-coverage --min=100"
         ],
         "test:unit": [
-            "vendor/bin/pest --parallel"
+            "vendor/bin/pest --parallel --exclude-group=install",
+            "vendor/bin/pest --group=install"
         ],
         "test": [
             "@analyse",
