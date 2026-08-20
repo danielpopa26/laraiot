@@ -27,9 +27,10 @@
         "php-mqtt/client": "^2.3"
     },
     "require-dev": {
+        "inertiajs/inertia-laravel": "^3.0",
         "larastan/larastan": "^3.9",
-        "laravel/pint": "^1.29",
         "laravel/pao": "^1.0",
+        "laravel/pint": "^1.29",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.6",
         "pestphp/pest-plugin-laravel": "^4.1",

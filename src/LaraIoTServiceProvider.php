@@ -51,6 +51,12 @@ class LaraIoTServiceProvider extends ServiceProvider
     {
         $this->loadRoutesFrom(__DIR__.'/../routes/laraiot.php');
 
+        if ((bool) config('laraiot.ui.enabled', false)) {
+            $this->loadRoutesFrom(
+                __DIR__.'/../routes/laraiot-ui.php',
+            );
+        }
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'laraiot');
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'laraiot');
@@ -75,7 +81,11 @@ class LaraIoTServiceProvider extends ServiceProvider
         ], ['laraiot', 'laraiot-views']);
 
         $this->publishes([
-            __DIR__.'/../resources/js/LaraIoT' => resource_path('js/LaraIoT'),
+            __DIR__.'/../resources/js/components/laraiot' => resource_path('js/components/laraiot'),
+
+            __DIR__.'/../resources/js/layouts/laraiot' => resource_path('js/layouts/laraiot'),
+
+            __DIR__.'/../resources/js/pages/laraiot' => resource_path('js/pages/laraiot'),
         ], ['laraiot', 'laraiot-ui']);
 
         $this->publishes([

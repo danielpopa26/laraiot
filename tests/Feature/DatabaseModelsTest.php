@@ -20,6 +20,8 @@ it('runs the LaraIoT package migrations', function () {
         ->and(Schema::hasTable('laraiot_mqtt_topics'))->toBeTrue()
         ->and(Schema::hasTable('laraiot_activity_logs'))->toBeTrue()
         ->and(Schema::hasTable('laraiot_settings'))->toBeTrue()
+        ->and(Schema::hasTable('laraiot_admins'))->toBeTrue()
+        ->and(Schema::hasTable('laraiot_admin_passkeys'))->toBeTrue()
         ->and(Schema::hasColumns('laraiot_mqtt_topics', [
             'logical_device_id',
             'last_payload',

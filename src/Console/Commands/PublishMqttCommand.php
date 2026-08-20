@@ -13,7 +13,7 @@ final class PublishMqttCommand extends Command
 {
     protected $signature = 'laraiot:publish
         {topicId : ID of the configured MQTT command topic}
-        {command : Logical command key from the topic command map}
+        {commandKey : Logical command key from the topic command map}
         {--client-id= : Optional MQTT client ID}';
 
     protected $description =
@@ -23,12 +23,12 @@ final class PublishMqttCommand extends Command
         MqttCommandService $commandService,
     ): int {
         $topicId = $this->argument('topicId');
-        $command = $this->argument('command');
+        $command = $this->argument('commandKey');
         $clientId = $this->option('client-id');
 
         if (
-            ! is_string($topicId)
-            || ! ctype_digit($topicId)
+            ! ctype_digit($topicId)
+            || (int) $topicId < 1
         ) {
             $this->components->error(
                 'The MQTT topic ID must be a positive integer.',
@@ -37,10 +37,7 @@ final class PublishMqttCommand extends Command
             return self::FAILURE;
         }
 
-        if (
-            ! is_string($command)
-            || trim($command) === ''
-        ) {
+        if (trim($command) === '') {
             $this->components->error(
                 'The MQTT command must not be empty.',
             );
