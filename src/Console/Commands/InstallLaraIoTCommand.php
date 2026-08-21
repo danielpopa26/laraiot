@@ -499,9 +499,17 @@ class InstallLaraIoTCommand extends Command
         $this->newLine();
         $this->components->info('Configuring Laravel Reverb...');
 
-        try {
-            $exitCode = $this->call('reverb:install');
-        } catch (Throwable $exception) {
+        if ($this->runReverbInstall()) {
+            return;
+        }
+
+        /*
+        * On a clean Laravel installation, the first Reverb installation
+        * attempt may initialise broadcasting and create routes/channels.php
+        * before returning unsuccessfully. Once broadcasting exists, a
+        * second Reverb installation attempt can complete normally.
+        */
+        if (! is_file(base_path('routes/channels.php'))) {
             $this->components->warn(
                 'Laravel Reverb could not be configured automatically.',
             );
@@ -512,10 +520,40 @@ class InstallLaraIoTCommand extends Command
             return;
         }
 
-        if ($exitCode !== self::SUCCESS) {
-            $this->components->warn(
-                'Laravel Reverb could not be configured automatically. Run "php artisan reverb:install" manually.',
+        $this->components->info(
+            'Broadcasting was initialized. Retrying Laravel Reverb configuration...',
+        );
+
+        if ($this->runReverbInstall()) {
+            $this->components->info(
+                'Laravel Reverb configured successfully.',
             );
+
+            return;
+        }
+
+        $this->components->warn(
+            'Laravel Reverb could not be configured automatically after retry.',
+        );
+        $this->components->warn(
+            'Run "php artisan reverb:install" manually in the host application.',
+        );
+    }
+
+    /**
+     * Run the Laravel Reverb installer.
+     *
+     * The command mutates the host application, therefore subsequent calls
+     * may legitimately return a different result.
+     *
+     * @phpstan-impure
+     */
+    private function runReverbInstall(): bool
+    {
+        try {
+            return $this->call('reverb:install') === self::SUCCESS;
+        } catch (Throwable) {
+            return false;
         }
     }
 }
