@@ -109,22 +109,8 @@ class LaraIoTServiceProvider extends ServiceProvider
         ]);
 
         $this->publishes([
-            __DIR__.'/../resources/js/components/laraiot' =>
-                resource_path(
-                    'js/components/laraiot',
-                ),
-            __DIR__.'/../resources/js/layouts/laraiot' =>
-                resource_path(
-                    'js/layouts/laraiot',
-                ),
-            __DIR__.'/../resources/js/pages/laraiot' =>
-                resource_path(
-                    'js/pages/laraiot',
-                ),
-        ], [
-            'laraiot',
-            'laraiot-ui',
-        ]);
+            __DIR__.'/../resources/js' => resource_path('js'),
+        ], ['laraiot', 'laraiot-ui']);
 
         $this->publishes([
             __DIR__.'/../lang' =>

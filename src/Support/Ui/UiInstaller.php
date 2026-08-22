@@ -468,6 +468,8 @@ BLADE;
         }
 
         $requiredFiles = [
+            'resources/js/components/laraiot/AppSidebar.vue',
+            'resources/js/composables/laraiot/useLaraIoTUrl.js',
             'resources/js/layouts/laraiot/LaraIoTLayout.vue',
             'resources/js/pages/laraiot/Dashboard.vue',
         ];
