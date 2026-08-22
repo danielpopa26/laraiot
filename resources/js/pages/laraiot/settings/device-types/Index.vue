@@ -24,7 +24,7 @@ const toggleEnabled = (deviceType) => {
 <div class="space-y-6">
     <div class="flex justify-between gap-4">
         <div><h1 class="text-2xl font-semibold">Device Types</h1><p class="mt-1 text-sm text-slate-500">Manage logical device types.</p></div>
-        <Link :href="laraiotUrl('settings/device-types/create')" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm text-white"><Plus class="size-4" />Add Device Type</Link>
+        <Link :href="laraiotUrl('settings/device-types/create')" class="inline-flex items-center gap-2 rounded-lg bg-[#2583FF] px-4 py-2.5 text-sm text-white"><Plus class="size-4" />Add Device Type</Link>
     </div>
     <div v-if="deviceTypes.length === 0" class="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center"><Tags class="mx-auto size-8 text-slate-400" /><p class="mt-3 text-sm text-slate-500">No device types.</p></div>
     <div v-else class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">

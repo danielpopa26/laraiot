@@ -109,6 +109,14 @@ final class UiEnvironmentDetector
                 'lucide-vue-next',
                 $packageJson,
             ),
+            'fontsource_inter' => $this->nodePackageStatus(
+                '@fontsource/inter',
+                $packageJson,
+            ),
+            'fontsource_jetbrains_mono' => $this->nodePackageStatus(
+                '@fontsource/jetbrains-mono',
+                $packageJson,
+            ),
         ];
 
         $vite = [

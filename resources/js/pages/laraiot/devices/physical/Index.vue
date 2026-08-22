@@ -23,7 +23,7 @@ const { laraiotUrl } = useLaraIoTUrl();
         <div class="space-y-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-950">
+                    <h1 class="text-2xl font-semibold tracking-tight text-[#0B1735]">
                         Physical Devices
                     </h1>
                     <p class="mt-1 text-sm text-slate-500">
@@ -33,7 +33,7 @@ const { laraiotUrl } = useLaraIoTUrl();
 
                 <Link
                     :href="laraiotUrl('devices/physical/create')"
-                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2583FF] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#1677F2]"
                 >
                     <Plus class="size-4" />
                     Add Physical Device
@@ -77,7 +77,7 @@ const { laraiotUrl } = useLaraIoTUrl();
                                 <td class="px-5 py-4">
                                     <Link
                                         :href="laraiotUrl(`devices/physical/${device.id}`)"
-                                        class="font-medium text-slate-900 hover:text-slate-600"
+                                        class="font-medium text-[#0B1735] hover:text-slate-600"
                                     >
                                         {{ device.name }}
                                     </Link>

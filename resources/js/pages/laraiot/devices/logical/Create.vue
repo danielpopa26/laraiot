@@ -30,14 +30,14 @@ const submit = () => {
     <Head title="Add Logical Device" />
     <LaraIoTLayout>
         <div class="mx-auto max-w-4xl space-y-6">
-            <Link :href="laraiotUrl('devices/logical')" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900">
+            <Link :href="laraiotUrl('devices/logical')" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0B1735]">
                 <ArrowLeft class="size-4" /> Logical Devices
             </Link>
 
             <div class="flex items-start gap-4">
-                <div class="flex size-11 items-center justify-center rounded-xl bg-slate-900 text-white"><Boxes class="size-5" /></div>
+                <div class="flex size-11 items-center justify-center rounded-xl bg-[#2583FF] text-white"><Boxes class="size-5" /></div>
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-950">Add Logical Device</h1>
+                    <h1 class="text-2xl font-semibold tracking-tight text-[#0B1735]">Add Logical Device</h1>
                     <p class="mt-1 text-sm text-slate-500">Create a logical device and associate it with physical hardware.</p>
                 </div>
             </div>
@@ -80,7 +80,7 @@ const submit = () => {
 
                 <div class="flex justify-end gap-3">
                     <Link :href="laraiotUrl('devices/logical')" class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700">Cancel</Link>
-                    <button type="submit" :disabled="form.processing" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+                    <button type="submit" :disabled="form.processing" class="inline-flex items-center gap-2 rounded-lg bg-[#2583FF] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
                         <Save class="size-4" /> {{ form.processing ? 'Saving...' : 'Save Logical Device' }}
                     </button>
                 </div>

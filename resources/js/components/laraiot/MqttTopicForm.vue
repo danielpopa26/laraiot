@@ -29,7 +29,7 @@ const removeValueMapEntry = (index) => {
             class="rounded-xl border border-slate-200 bg-white shadow-sm"
         >
             <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-base font-semibold text-slate-950">
+                <h2 class="text-base font-semibold text-[#0B1735]">
                     Topic information
                 </h2>
 
@@ -51,7 +51,7 @@ const removeValueMapEntry = (index) => {
                     <select
                         id="purpose"
                         v-model="form.purpose"
-                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                     >
                         <option value="state">
                             State
@@ -85,7 +85,7 @@ const removeValueMapEntry = (index) => {
                         type="text"
                         autocomplete="off"
                         spellcheck="false"
-                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm outline-none transition placeholder:font-sans placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-[#0B1735] shadow-sm outline-none transition placeholder:font-sans placeholder:text-slate-400 focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                         :class="{
                             'border-red-300 focus:border-red-400 focus:ring-red-100':
                                 form.errors.topic,
@@ -115,7 +115,7 @@ const removeValueMapEntry = (index) => {
             class="rounded-xl border border-slate-200 bg-white shadow-sm"
         >
             <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-base font-semibold text-slate-950">
+                <h2 class="text-base font-semibold text-[#0B1735]">
                     State payload
                 </h2>
 
@@ -137,7 +137,7 @@ const removeValueMapEntry = (index) => {
                     <select
                         id="payload_format"
                         v-model="form.payload_format"
-                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                     >
                         <option value="raw">
                             RAW
@@ -171,7 +171,7 @@ const removeValueMapEntry = (index) => {
                         type="text"
                         autocomplete="off"
                         spellcheck="false"
-                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm outline-none transition placeholder:font-sans placeholder:text-slate-400 focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-[#0B1735] shadow-sm outline-none transition placeholder:font-sans placeholder:text-slate-400 focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                         placeholder="MS01.Humidity"
                     />
 
@@ -220,14 +220,14 @@ const removeValueMapEntry = (index) => {
                             <input
                                 v-model="mapping.source"
                                 type="text"
-                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                                 placeholder="ON"
                             />
 
                             <input
                                 v-model="mapping.target"
                                 type="text"
-                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                                class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                                 placeholder="on"
                             />
 
@@ -257,7 +257,7 @@ const removeValueMapEntry = (index) => {
             class="rounded-xl border border-slate-200 bg-white shadow-sm"
         >
             <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-base font-semibold text-slate-950">
+                <h2 class="text-base font-semibold text-[#0B1735]">
                     Command payloads
                 </h2>
 
@@ -280,7 +280,7 @@ const removeValueMapEntry = (index) => {
                         id="command_on"
                         v-model="form.command_on"
                         rows="4"
-                        class="mt-2 block w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                         placeholder="ON"
                     />
 
@@ -305,7 +305,7 @@ const removeValueMapEntry = (index) => {
                         id="command_off"
                         v-model="form.command_off"
                         rows="4"
-                        class="mt-2 block w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                         placeholder="OFF"
                     />
 
@@ -323,7 +323,7 @@ const removeValueMapEntry = (index) => {
             class="rounded-xl border border-slate-200 bg-white shadow-sm"
         >
             <div class="border-b border-slate-200 px-6 py-4">
-                <h2 class="text-base font-semibold text-slate-950">
+                <h2 class="text-base font-semibold text-[#0B1735]">
                     MQTT options
                 </h2>
             </div>
@@ -340,7 +340,7 @@ const removeValueMapEntry = (index) => {
                     <select
                         id="qos"
                         v-model.number="form.qos"
-                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                        class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-[#0B1735] shadow-sm outline-none transition focus:border-[#2583FF] focus:ring-2 focus:ring-blue-100"
                     >
                         <option :value="0">
                             0 — At most once
@@ -371,7 +371,7 @@ const removeValueMapEntry = (index) => {
                         id="retain"
                         v-model="form.retain"
                         type="checkbox"
-                        class="mt-0.5 size-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                        class="mt-0.5 size-4 rounded border-slate-300 text-[#0B1735] focus:ring-slate-400"
                     />
 
                     <div>
@@ -395,7 +395,7 @@ const removeValueMapEntry = (index) => {
                         id="is_enabled"
                         v-model="form.is_enabled"
                         type="checkbox"
-                        class="mt-0.5 size-4 rounded border-slate-300 text-slate-900 focus:ring-slate-400"
+                        class="mt-0.5 size-4 rounded border-slate-300 text-[#0B1735] focus:ring-slate-400"
                     />
 
                     <div>

@@ -6,17 +6,14 @@ const props = defineProps({
         type: String,
         required: true,
     },
-
     status: {
         type: String,
         default: 'neutral',
     },
-
     dot: {
         type: Boolean,
         default: true,
     },
-
     size: {
         type: String,
         default: 'sm',
@@ -26,11 +23,11 @@ const props = defineProps({
 
 const statusClasses = computed(() => {
     const variants = {
-        success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-        danger: 'border-red-200 bg-red-50 text-red-700',
-        warning: 'border-amber-200 bg-amber-50 text-amber-700',
-        info: 'border-blue-200 bg-blue-50 text-blue-700',
-        neutral: 'border-slate-200 bg-slate-50 text-slate-600',
+        success: 'border-emerald-200 bg-emerald-50 text-[#059669]',
+        danger: 'border-red-200 bg-red-50 text-[#DC2626]',
+        warning: 'border-amber-200 bg-amber-50 text-[#D97706]',
+        info: 'border-blue-200 bg-blue-50 text-[#2583FF]',
+        neutral: 'border-slate-200 bg-slate-50 text-slate-500',
     };
 
     return variants[props.status] ?? variants.neutral;
@@ -38,21 +35,21 @@ const statusClasses = computed(() => {
 
 const dotClasses = computed(() => {
     const variants = {
-        success: 'bg-emerald-500',
-        danger: 'bg-red-500',
-        warning: 'bg-amber-500',
-        info: 'bg-blue-500',
-        neutral: 'bg-slate-400',
+        success: 'bg-[#059669]',
+        danger: 'bg-[#DC2626]',
+        warning: 'bg-[#D97706]',
+        info: 'bg-[#2583FF]',
+        neutral: 'bg-[#94A3B8]',
     };
 
     return variants[props.status] ?? variants.neutral;
 });
 
-const sizeClasses = computed(() => {
-    return props.size === 'md'
+const sizeClasses = computed(() =>
+    props.size === 'md'
         ? 'px-3 py-1.5 text-sm'
-        : 'px-2.5 py-1 text-xs';
-});
+        : 'px-2.5 py-1 text-xs',
+);
 </script>
 
 <template>
@@ -65,9 +62,6 @@ const sizeClasses = computed(() => {
             class="size-2 shrink-0 rounded-full"
             :class="dotClasses"
         />
-
-        <span>
-            {{ label }}
-        </span>
+        <span>{{ label }}</span>
     </span>
 </template>

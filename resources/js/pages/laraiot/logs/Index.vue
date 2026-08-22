@@ -3,9 +3,9 @@ import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Activity, CalendarDays, Filter, RotateCcw, Search } from 'lucide-vue-next';
 
-import LaraIoTLayout from '../../layouts/laraiot/LaraIoTLayout.vue';
-import StatusBadge from '../../components/laraiot/StatusBadge.vue';
-import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
+import LaraIoTLayout from '../../../layouts/laraiot/LaraIoTLayout.vue';
+import StatusBadge from '../../../components/laraiot/StatusBadge.vue';
+import { useLaraIoTUrl } from '../../../composables/laraiot/useLaraIoTUrl.js';
 
 const props = defineProps({
     logs: { type: Object, required: true },
@@ -47,8 +47,8 @@ const statusForType = (type) => ({ command: 'info', state: 'success', system: 'n
     <LaraIoTLayout>
         <div class="space-y-6">
             <div class="flex items-start gap-4">
-                <div class="flex size-11 items-center justify-center rounded-xl bg-slate-900 text-white"><Activity class="size-5" /></div>
-                <div><h1 class="text-2xl font-semibold tracking-tight text-slate-950">Logs</h1><p class="mt-1 text-sm text-slate-500">Review LaraIoT activity events.</p></div>
+                <div class="flex size-11 items-center justify-center rounded-xl bg-[#2583FF] text-white"><Activity class="size-5" /></div>
+                <div><h1 class="text-2xl font-semibold tracking-tight text-[#0B1735]">Logs</h1><p class="mt-1 text-sm text-slate-500">Review LaraIoT activity events.</p></div>
             </div>
 
             <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -60,7 +60,7 @@ const statusForType = (type) => ({ command: 'info', state: 'success', system: 'n
                     <input v-model="filterForm.to" type="date" class="rounded-lg border border-slate-300 px-3 py-2.5 text-sm" />
                     <div class="flex gap-3 xl:col-span-5 xl:justify-end">
                         <button type="button" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm" @click="resetFilters"><RotateCcw class="size-4" />Reset</button>
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm text-white"><Filter class="size-4" />Apply Filters</button>
+                        <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-[#2583FF] px-4 py-2.5 text-sm text-white"><Filter class="size-4" />Apply Filters</button>
                     </div>
                 </form>
             </section>
@@ -85,7 +85,7 @@ const statusForType = (type) => ({ command: 'info', state: 'success', system: 'n
 
                 <div v-if="logs.links?.length > 3" class="flex flex-wrap gap-1 border-t border-slate-200 px-5 py-4">
                     <template v-for="(link, index) in logs.links" :key="index">
-                        <Link v-if="link.url" :href="link.url" preserve-scroll preserve-state class="rounded-lg border px-3 py-2 text-sm" :class="link.active ? 'bg-slate-900 text-white' : 'bg-white text-slate-600'" v-html="link.label" />
+                        <Link v-if="link.url" :href="link.url" preserve-scroll preserve-state class="rounded-lg border px-3 py-2 text-sm" :class="link.active ? 'bg-[#2583FF] text-white' : 'bg-white text-slate-600'" v-html="link.label" />
                         <span v-else class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-300" v-html="link.label" />
                     </template>
                 </div>

@@ -71,6 +71,16 @@ function completeInertiaVueEnvironment(array $overrides = []): array
                 'constraint' => '^0.468.0',
                 'installed' => true,
             ],
+            'fontsource_inter' => [
+                'declared' => true,
+                'constraint' => '^5.3.0',
+                'installed' => true,
+            ],
+            'fontsource_jetbrains_mono' => [
+                'declared' => true,
+                'constraint' => '^5.3.0',
+                'installed' => true,
+            ],
             'react' => [
                 'declared' => false,
                 'constraint' => null,
@@ -167,6 +177,16 @@ it('builds the installation plan for a clean Laravel application', function (): 
                 'constraint' => null,
                 'installed' => false,
             ],
+            'fontsource_inter' => [
+                'declared' => false,
+                'constraint' => null,
+                'installed' => false,
+            ],
+            'fontsource_jetbrains_mono' => [
+                'declared' => false,
+                'constraint' => null,
+                'installed' => false,
+            ],
         ],
 
         'vite' => [
@@ -194,6 +214,8 @@ it('builds the installation plan for a clean Laravel application', function (): 
             '@inertiajs/vue3',
             '@vitejs/plugin-vue',
             'lucide-vue-next',
+            '@fontsource/inter',
+            '@fontsource/jetbrains-mono',
         ])
         ->and($plan->declaredButNotInstalled())->toBe([
             'vite',
@@ -223,6 +245,8 @@ it('builds the installation plan for a clean Laravel application', function (): 
         'tailwindcss',
         '@tailwindcss/vite',
         'lucide-vue-next',
+        '@fontsource/inter',
+        '@fontsource/jetbrains-mono',
     );
 });
 
