@@ -110,6 +110,7 @@ class LaraIoTServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__.'/../resources/js' => resource_path('js'),
+            __DIR__.'/../resources/css/laraiot.css' => resource_path('css/laraiot.css'),
         ], ['laraiot', 'laraiot-ui']);
 
         $this->publishes([

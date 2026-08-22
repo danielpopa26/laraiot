@@ -29,6 +29,8 @@ final class UiInstallationPlan
         'tailwindcss' => 'tailwindcss',
         'tailwindcss_vite' => '@tailwindcss/vite',
         'lucide_vue_next' => 'lucide-vue-next',
+        'fontsource_inter' => '@fontsource/inter',
+        'fontsource_jetbrains_mono' => '@fontsource/jetbrains-mono',
     ];
 
     /**

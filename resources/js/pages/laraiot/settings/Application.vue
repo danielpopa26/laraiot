@@ -34,9 +34,9 @@ const submit = () => {
     <LaraIoTLayout>
         <div class="mx-auto max-w-4xl space-y-6">
             <div class="flex items-start gap-4">
-                <div class="flex size-11 items-center justify-center rounded-xl bg-slate-900 text-white"><Settings class="size-5" /></div>
+                <div class="flex size-11 items-center justify-center rounded-xl bg-[#2583FF] text-white"><Settings class="size-5" /></div>
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-950">Application Settings</h1>
+                    <h1 class="text-2xl font-semibold tracking-tight text-[#0B1735]">Application Settings</h1>
                     <p class="mt-1 text-sm text-slate-500">Configure communication mode, polling and date/time presentation.</p>
                 </div>
             </div>
@@ -72,7 +72,7 @@ const submit = () => {
                 </section>
 
                 <div class="flex justify-end">
-                    <button type="submit" :disabled="form.processing || !form.isDirty" class="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+                    <button type="submit" :disabled="form.processing || !form.isDirty" class="inline-flex items-center gap-2 rounded-lg bg-[#2583FF] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
                         <Save class="size-4" /> {{ form.processing ? 'Saving...' : 'Save Settings' }}
                     </button>
                 </div>

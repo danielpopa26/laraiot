@@ -1,10 +1,14 @@
 <script setup>
+import { computed } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import {
     Activity,
     Boxes,
     Cpu,
     Radio,
+    RefreshCw,
+    WifiOff,
+    Zap,
 } from 'lucide-vue-next';
 
 import LaraIoTLayout from '../../layouts/laraiot/LaraIoTLayout.vue';
@@ -12,7 +16,7 @@ import StatCard from '../../components/laraiot/StatCard.vue';
 import StatusBadge from '../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
 
-defineProps({
+const props = defineProps({
     statistics: {
         type: Object,
         default: () => ({
@@ -39,6 +43,21 @@ defineProps({
 
 const { laraiotUrl } = useLaraIoTUrl();
 
+const mqttLabel = computed(() => {
+    if (props.mqtt.connected === true) return 'Connected';
+    if (props.mqtt.connected === false) return 'Disconnected';
+
+    return 'Unknown';
+});
+
+const mqttTone = computed(() =>
+    props.mqtt.connected === true
+        ? 'green'
+        : props.mqtt.connected === false
+            ? 'slate'
+            : 'slate',
+);
+
 const activityStatus = (status) => {
     if (['success', 'warning', 'danger', 'info'].includes(status)) {
         return status;
@@ -53,13 +72,16 @@ const activityStatus = (status) => {
 
     <LaraIoTLayout>
         <div class="space-y-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold tracking-tight text-slate-950">
-                        Dashboard
-                    </h1>
+                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-[#2583FF]">
+                        System overview
+                    </p>
+                    <h2 class="mt-1.5 text-2xl font-semibold tracking-tight text-[#0B1735]">
+                        Your IoT platform at a glance
+                    </h2>
                     <p class="mt-1 text-sm text-slate-500">
-                        Overview of the LaraIoT environment.
+                        Monitor devices, communication status and recent LaraIoT activity.
                     </p>
                 </div>
 
@@ -68,15 +90,19 @@ const activityStatus = (status) => {
                     status="info"
                     size="md"
                 />
-            </div>
+            </section>
 
-            <div class="grid gap-4 md:grid-cols-3">
+            <section
+                class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+                aria-label="Platform summary"
+            >
                 <StatCard
                     title="Physical Devices"
                     :value="statistics.physicalDevices"
                     description="Registered physical equipment"
                     :icon="Cpu"
                     :href="laraiotUrl('devices/physical')"
+                    tone="blue"
                 />
 
                 <StatCard
@@ -85,64 +111,31 @@ const activityStatus = (status) => {
                     description="Configured logical devices"
                     :icon="Boxes"
                     :href="laraiotUrl('devices/logical')"
+                    tone="green"
                 />
 
                 <StatCard
-                    title="MQTT Topics"
-                    :value="statistics.mqttTopics"
-                    description="Configured MQTT topics"
-                    :icon="Radio"
+                    title="MQTT Broker"
+                    :value="mqttLabel"
+                    :description="`${statistics.mqttTopics} configured MQTT topics`"
+                    :icon="mqtt.connected === false ? WifiOff : Radio"
+                    :tone="mqttTone"
                 />
-            </div>
 
-            <div class="grid gap-4 lg:grid-cols-3">
-                <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-sm font-medium text-slate-500">MQTT</p>
-                    <div class="mt-3">
-                        <StatusBadge
-                            :label="
-                                mqtt.connected === true
-                                    ? 'Connected'
-                                    : mqtt.connected === false
-                                        ? 'Disconnected'
-                                        : 'Unknown'
-                            "
-                            :status="
-                                mqtt.connected === true
-                                    ? 'success'
-                                    : mqtt.connected === false
-                                        ? 'danger'
-                                        : 'neutral'
-                            "
-                            size="md"
-                        />
-                    </div>
-                </section>
+                <StatCard
+                    title="Communication Mode"
+                    :value="mode === 'websocket' ? 'WebSocket' : 'Polling'"
+                    :description="mode === 'websocket' ? 'Live frontend updates' : 'Periodic frontend updates'"
+                    :icon="mode === 'websocket' ? Zap : RefreshCw"
+                    :tone="mode === 'websocket' ? 'purple' : 'slate'"
+                />
+            </section>
 
-                <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-sm font-medium text-slate-500">
-                        Communication Mode
-                    </p>
-                    <p class="mt-3 text-lg font-semibold text-slate-900">
-                        {{ mode === 'websocket' ? 'WebSocket' : 'Polling' }}
-                    </p>
-                </section>
-
-                <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p class="text-sm font-medium text-slate-500">
-                        Logical Devices
-                    </p>
-                    <p class="mt-3 text-lg font-semibold text-slate-900">
-                        {{ statistics.logicalDevices }}
-                    </p>
-                </section>
-            </div>
-
-            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div class="border-b border-slate-200 px-6 py-4">
+            <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.025]">
+                <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
                     <div class="flex items-center gap-2">
-                        <Activity class="size-4 text-slate-500" />
-                        <h2 class="text-base font-semibold text-slate-950">
+                        <Activity class="size-4 text-[#2583FF]" :stroke-width="1.9" />
+                        <h2 class="text-base font-semibold text-[#0B1735]">
                             Recent Activity
                         </h2>
                     </div>
@@ -150,9 +143,17 @@ const activityStatus = (status) => {
 
                 <div
                     v-if="recentActivity.length === 0"
-                    class="px-6 py-12 text-center text-sm text-slate-500"
+                    class="flex min-h-44 flex-col items-center justify-center px-6 py-10 text-center"
                 >
-                    No activity has been recorded yet.
+                    <span class="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-[#2583FF]">
+                        <Activity class="size-6" :stroke-width="1.7" />
+                    </span>
+                    <p class="mt-4 text-sm font-medium text-[#0B1735]">
+                        No activity has been recorded yet.
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Device state changes and commands will appear here.
+                    </p>
                 </div>
 
                 <div v-else class="divide-y divide-slate-100">
@@ -162,7 +163,7 @@ const activityStatus = (status) => {
                         class="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
                     >
                         <div class="min-w-0">
-                            <p class="text-sm font-medium text-slate-900">
+                            <p class="text-sm font-medium text-[#0B1735]">
                                 {{ activity.message }}
                             </p>
                             <p

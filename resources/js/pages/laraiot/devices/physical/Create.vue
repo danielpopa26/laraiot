@@ -29,18 +29,18 @@ const submit = () => {
             <div>
                 <Link
                     :href="laraiotUrl('devices/physical')"
-                    class="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
+                    class="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0B1735]"
                 >
                     <ArrowLeft class="size-4" />
                     Physical Devices
                 </Link>
 
                 <div class="flex items-start gap-4">
-                    <div class="flex size-11 items-center justify-center rounded-xl bg-slate-900 text-white">
+                    <div class="flex size-11 items-center justify-center rounded-xl bg-[#2583FF] text-white">
                         <Cpu class="size-5" />
                     </div>
                     <div>
-                        <h1 class="text-2xl font-semibold tracking-tight text-slate-950">
+                        <h1 class="text-2xl font-semibold tracking-tight text-[#0B1735]">
                             Add Physical Device
                         </h1>
                         <p class="mt-1 text-sm text-slate-500">
@@ -53,7 +53,7 @@ const submit = () => {
             <form class="space-y-6" @submit.prevent="submit">
                 <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 px-6 py-4">
-                        <h2 class="text-base font-semibold text-slate-950">Device information</h2>
+                        <h2 class="text-base font-semibold text-[#0B1735]">Device information</h2>
                     </div>
                     <div class="space-y-5 p-6">
                         <div>
@@ -71,7 +71,7 @@ const submit = () => {
 
                 <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 px-6 py-4">
-                        <h2 class="text-base font-semibold text-slate-950">Network information</h2>
+                        <h2 class="text-base font-semibold text-[#0B1735]">Network information</h2>
                     </div>
                     <div class="grid gap-5 p-6 md:grid-cols-2">
                         <div>
@@ -89,7 +89,7 @@ const submit = () => {
 
                 <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
                     <div class="border-b border-slate-200 px-6 py-4">
-                        <h2 class="text-base font-semibold text-slate-950">Description & status</h2>
+                        <h2 class="text-base font-semibold text-[#0B1735]">Description & status</h2>
                     </div>
                     <div class="space-y-5 p-6">
                         <textarea v-model="form.description" rows="4" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" />
@@ -107,7 +107,7 @@ const submit = () => {
                     <Link :href="laraiotUrl('devices/physical')" class="inline-flex justify-center rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700">
                         Cancel
                     </Link>
-                    <button type="submit" :disabled="form.processing" class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
+                    <button type="submit" :disabled="form.processing" class="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2583FF] px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">
                         <Save class="size-4" />
                         {{ form.processing ? 'Saving...' : 'Save Device' }}
                     </button>

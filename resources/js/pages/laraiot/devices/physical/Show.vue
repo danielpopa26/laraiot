@@ -32,7 +32,7 @@ const deleteDevice = () => {
         <div class="space-y-6">
             <Link
                 :href="laraiotUrl('devices/physical')"
-                class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900"
+                class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#0B1735]"
             >
                 <ArrowLeft class="size-4" />
                 Physical Devices
@@ -40,12 +40,12 @@ const deleteDevice = () => {
 
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div class="flex items-start gap-4">
-                    <div class="flex size-12 items-center justify-center rounded-xl bg-slate-900 text-white">
+                    <div class="flex size-12 items-center justify-center rounded-xl bg-[#2583FF] text-white">
                         <Cpu class="size-6" />
                     </div>
 
                     <div>
-                        <h1 class="text-2xl font-semibold tracking-tight text-slate-950">
+                        <h1 class="text-2xl font-semibold tracking-tight text-[#0B1735]">
                             {{ physicalDevice.name }}
                         </h1>
 
@@ -110,7 +110,7 @@ const deleteDevice = () => {
                             <Boxes class="size-4" />
                             Logical Devices
                         </div>
-                        <p class="mt-3 text-2xl font-semibold text-slate-950">
+                        <p class="mt-3 text-2xl font-semibold text-[#0B1735]">
                             {{ logicalDevices.length }}
                         </p>
                     </div>
@@ -121,7 +121,7 @@ const deleteDevice = () => {
                 <div class="border-b border-slate-200 px-6 py-4">
                     <div class="flex items-center gap-2">
                         <FileText class="size-4 text-slate-500" />
-                        <h2 class="text-base font-semibold text-slate-950">
+                        <h2 class="text-base font-semibold text-[#0B1735]">
                             Description
                         </h2>
                     </div>
@@ -142,7 +142,7 @@ const deleteDevice = () => {
 
             <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
                 <div class="border-b border-slate-200 px-6 py-4">
-                    <h2 class="text-base font-semibold text-slate-950">
+                    <h2 class="text-base font-semibold text-[#0B1735]">
                         Logical Devices
                     </h2>
                 </div>
@@ -162,7 +162,7 @@ const deleteDevice = () => {
                         class="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50"
                     >
                         <div>
-                            <p class="text-sm font-medium text-slate-900">
+                            <p class="text-sm font-medium text-[#0B1735]">
                                 {{ logicalDevice.name }}
                             </p>
                             <code class="mt-1 block text-xs text-slate-500">
@@ -187,7 +187,7 @@ const deleteDevice = () => {
 
                 <div class="flex items-center justify-between gap-4 p-6">
                     <div>
-                        <p class="text-sm font-medium text-slate-900">
+                        <p class="text-sm font-medium text-[#0B1735]">
                             Delete Physical Device
                         </p>
                         <p class="mt-1 text-sm text-slate-500">

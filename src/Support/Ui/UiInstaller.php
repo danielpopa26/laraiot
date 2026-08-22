@@ -19,6 +19,8 @@ final class UiInstaller
         'vue',
         '@inertiajs/vue3',
         'lucide-vue-next',
+        '@fontsource/inter',
+        '@fontsource/jetbrains-mono',
     ];
 
     /**
@@ -468,10 +470,13 @@ BLADE;
         }
 
         $requiredFiles = [
+            'resources/js/components/laraiot/AppLogoIcon.vue',
             'resources/js/components/laraiot/AppSidebar.vue',
             'resources/js/composables/laraiot/useLaraIoTUrl.js',
             'resources/js/layouts/laraiot/LaraIoTLayout.vue',
             'resources/js/pages/laraiot/Dashboard.vue',
+            'resources/js/styles/laraiot.css',
+            'resources/css/laraiot.css',
         ];
 
         foreach ($requiredFiles as $requiredFile) {
