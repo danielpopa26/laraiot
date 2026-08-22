@@ -2,9 +2,9 @@
 import { Head, useForm } from '@inertiajs/vue3';
 import { Clock3, Radio, RefreshCw, Save, Settings } from 'lucide-vue-next';
 
-import LaraIoTLayout from '../../layouts/laraiot/LaraIoTLayout.vue';
-import StatusBadge from '../../components/laraiot/StatusBadge.vue';
-import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
+import LaraIoTLayout from '../../../layouts/laraiot/LaraIoTLayout.vue';
+import StatusBadge from '../../../components/laraiot/StatusBadge.vue';
+import { useLaraIoTUrl } from '../../../composables/laraiot/useLaraIoTUrl.js';
 
 const props = defineProps({
     settings: { type: Object, required: true },

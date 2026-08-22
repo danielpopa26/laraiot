@@ -3,9 +3,9 @@ import { reactive } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Activity, CalendarDays, Filter, RotateCcw, Search } from 'lucide-vue-next';
 
-import LaraIoTLayout from '../../layouts/laraiot/LaraIoTLayout.vue';
-import StatusBadge from '../../components/laraiot/StatusBadge.vue';
-import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
+import LaraIoTLayout from '../../../layouts/laraiot/LaraIoTLayout.vue';
+import StatusBadge from '../../../components/laraiot/StatusBadge.vue';
+import { useLaraIoTUrl } from '../../../composables/laraiot/useLaraIoTUrl.js';
 
 const props = defineProps({
     logs: { type: Object, required: true },
