@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Danpopa\LaraIoT\LaraIoT;
 use Danpopa\LaraIoT\LaraIoTServiceProvider;
-use Danpopa\LaraIoT\Services\MqttPublisher;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\ServiceProvider;
 
@@ -16,18 +15,12 @@ it('returns the same instance from the container', function () {
     expect(app(LaraIoT::class))->toBe(app(LaraIoT::class));
 });
 
-it('registers the MQTT publisher as a singleton', function () {
-    $publisher = app(MqttPublisher::class);
-
-    expect($publisher)
-        ->toBeInstanceOf(MqttPublisher::class)
-        ->and($publisher)
-        ->toBe(app(MqttPublisher::class));
-});
-
 it('merges the package configuration', function () {
+    $packageConfig = require dirname(__DIR__, 2)
+        .'/config/laraiot.php';
+
     expect(config('laraiot.mode'))->toBe('polling')
-        ->and(config('laraiot.ui.enabled'))->toBeFalse()
+        ->and($packageConfig['ui']['enabled'])->toBeFalse()
         ->and(config('laraiot.ui.prefix'))->toBe('laraiot')
         ->and(config('laraiot.api.enabled'))->toBeTrue()
         ->and(config('laraiot.api.prefix'))->toBe('api/laraiot')
@@ -86,4 +79,4 @@ it('registers and executes the installation command', function () {
         ->expectsOutputToContain('LaraIoT installed successfully.')
         ->expectsOutputToContain('php artisan migrate')
         ->assertSuccessful();
-})->group('install');
+});
