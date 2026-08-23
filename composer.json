@@ -19,11 +19,10 @@
         }
     ],
     "require": {
-        "php": "^8.3",
         "illuminate/broadcasting": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
-        "laravel/reverb": "^1.11",
+        "php": "^8.3",
         "php-mqtt/client": "^2.3"
     },
     "require-dev": {
@@ -31,6 +30,7 @@
         "larastan/larastan": "^3.9",
         "laravel/pao": "^1.0",
         "laravel/pint": "^1.29",
+        "laravel/reverb": "^1.11",
         "orchestra/testbench": "^11.0",
         "pestphp/pest": "^4.6",
         "pestphp/pest-plugin-laravel": "^4.1",
@@ -107,5 +107,8 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "suggest": {
+        "laravel/reverb": "Required only when LaraIoT WebSocket mode is enabled."
+    }
 }

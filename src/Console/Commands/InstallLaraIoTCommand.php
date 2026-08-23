@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Console\Commands;
 
+use Danpopa\LaraIoT\Support\Reverb\ReverbEnvironmentDetector;
+use Danpopa\LaraIoT\Support\Reverb\ReverbInstallationPlan;
+use Danpopa\LaraIoT\Support\Reverb\ReverbInstaller;
 use Danpopa\LaraIoT\Support\Ui\UiEnvironmentDetector;
 use Danpopa\LaraIoT\Support\Ui\UiInstallationPlan;
 use Danpopa\LaraIoT\Support\Ui\UiInstaller;
@@ -22,7 +25,7 @@ class InstallLaraIoTCommand extends Command
     /**
      * The command description.
      */
-    protected $description = 'Install LaraIoT core resources and optionally the Vue UI.';
+    protected $description = 'Install LaraIoT core resources and optionally configure the Vue UI and WebSocket support.';
 
     /**
      * Execute the console command.
@@ -53,7 +56,7 @@ class InstallLaraIoTCommand extends Command
             );
         }
 
-        $this->installReverb();
+        $reverbStatus = $this->installOptionalReverb();
 
         $this->newLine();
         $this->components->info('LaraIoT installed successfully.');
@@ -68,11 +71,23 @@ class InstallLaraIoTCommand extends Command
             'conflict' => $this->components->warn(
                 'LaraIoT Vue UI was not installed because the host application uses a different frontend stack. The LaraIoT core remains available.',
             ),
-            'failed' => $this->components->error(
-                'LaraIoT Vue UI installation failed. The LaraIoT core remains available.',
-            ),
             default => $this->components->info(
                 'The optional Vue UI was not requested. Run "php artisan laraiot:install --ui" to install it.',
+            ),
+        };
+
+        match ($reverbStatus) {
+            'installed' => $this->components->info(
+                'Laravel Reverb was installed and configured for optional WebSocket mode.',
+            ),
+            'ready' => $this->components->info(
+                'Laravel Reverb is already installed and configured.',
+            ),
+            'failed' => $this->components->warn(
+                'Laravel Reverb could not be prepared. LaraIoT remains available in Polling mode.',
+            ),
+            default => $this->components->info(
+                'Laravel Reverb was not configured. LaraIoT remains available in Polling mode.',
             ),
         };
 
@@ -80,9 +95,15 @@ class InstallLaraIoTCommand extends Command
             'Run "php artisan migrate" to create the LaraIoT database tables.',
         );
 
-        $this->components->info(
-            'WebSocket mode uses Laravel Reverb. Start it with "php artisan reverb:start" when websocket mode is enabled.',
-        );
+        if (in_array($reverbStatus, ['installed', 'ready'], true)) {
+            $this->components->info(
+                'Start WebSocket mode with "php artisan reverb:start" when it is enabled.',
+            );
+        } else {
+            $this->components->info(
+                'Re-run "php artisan laraiot:install" later if you want to add WebSocket support.',
+            );
+        }
 
         return self::SUCCESS;
     }
@@ -492,76 +513,223 @@ class InstallLaraIoTCommand extends Command
         return $value ? 'yes' : 'no';
     }
 
-    private function installReverb(): void
+    private function installOptionalReverb(): string
     {
-        $application = $this->getApplication();
+        $this->newLine();
+        $this->components->info(
+            'Inspecting LaraIoT WebSocket environment...',
+        );
 
-        if ($application === null || ! $application->has('reverb:install')) {
-            $this->components->warn(
-                'Laravel Reverb is not available. Ensure laravel/reverb is installed.',
+        $environment = (new ReverbEnvironmentDetector(
+            base_path(),
+        ))->detect();
+
+        $this->displayReverbEnvironment($environment);
+
+        $plan = ReverbInstallationPlan::fromEnvironment(
+            $environment,
+        );
+
+        $this->newLine();
+        $this->components->info('LaraIoT WebSocket installation plan');
+
+        $this->displayReverbInstallationPlan($plan);
+
+        if (! $plan->requiresChanges()) {
+            $this->components->info(
+                'Laravel Reverb already satisfies the LaraIoT WebSocket requirements.',
             );
 
-            return;
+            return 'ready';
+        }
+
+        if ($plan->dependencyResolutionMayBeRequired()) {
+            $this->newLine();
+            $this->components->warn(
+                'Installing Reverb may require Composer to adjust existing Guzzle / PSR-7 dependency versions.',
+            );
+            $this->components->warn(
+                'LaraIoT will allow those dependency changes only for the optional Reverb installation.',
+            );
         }
 
         $this->newLine();
-        $this->components->info('Configuring Laravel Reverb...');
 
-        if ($this->runReverbInstall()) {
-            return;
-        }
+        $question = $plan->requiresComposerInstall()
+            ? 'Install and configure Laravel Reverb for optional WebSocket mode now?'
+            : 'Laravel Reverb is installed but not fully configured. Configure it now?';
 
-        /*
-        * On a clean Laravel installation, the first Reverb installation
-        * attempt may initialise broadcasting and create routes/channels.php
-        * before returning unsuccessfully. Once broadcasting exists, a
-        * second Reverb installation attempt can complete normally.
-        */
-        if (! is_file(base_path('routes/channels.php'))) {
-            $this->components->warn(
-                'Laravel Reverb could not be configured automatically.',
-            );
-            $this->components->warn(
-                'Run "php artisan reverb:install" manually in the host application.',
-            );
-
-            return;
-        }
-
-        $this->components->info(
-            'Broadcasting was initialized. Retrying Laravel Reverb configuration...',
+        $approved = $this->confirm(
+            $question,
+            false,
         );
 
-        if ($this->runReverbInstall()) {
+        if (! $approved) {
             $this->components->info(
-                'Laravel Reverb configured successfully.',
+                'No WebSocket infrastructure changes were made.',
             );
 
-            return;
+            return 'skipped';
         }
 
-        $this->components->warn(
-            'Laravel Reverb could not be configured automatically after retry.',
+        $this->newLine();
+        $this->components->info(
+            'Preparing Laravel Reverb WebSocket support...',
         );
-        $this->components->warn(
-            'Run "php artisan reverb:install" manually in the host application.',
-        );
+
+        try {
+            $steps = (new ReverbInstaller(base_path()))->install(
+                $plan,
+                $this->input->isInteractive(),
+            );
+        } catch (Throwable $exception) {
+            $this->components->error(
+                'Laravel Reverb could not be installed or configured.',
+            );
+            $this->components->error(
+                $exception->getMessage(),
+            );
+
+            return 'failed';
+        }
+
+        $this->displayExecutedReverbSteps($steps);
+
+        return 'installed';
     }
 
     /**
-     * Run the Laravel Reverb installer.
-     *
-     * The command mutates the host application, therefore subsequent calls
-     * may legitimately return a different result.
-     *
-     * @phpstan-impure
+     * @param  array<string, mixed>  $environment
      */
-    private function runReverbInstall(): bool
+    private function displayReverbEnvironment(array $environment): void
     {
-        try {
-            return $this->call('reverb:install') === self::SUCCESS;
-        } catch (Throwable) {
-            return false;
+        $reverb = $environment['reverb'] ?? [];
+        $guzzle = $environment['guzzle'] ?? [];
+        $configuration = $environment['configuration'] ?? [];
+
+        $reverb = is_array($reverb) ? $reverb : [];
+        $guzzle = is_array($guzzle) ? $guzzle : [];
+        $configuration = is_array($configuration)
+            ? $configuration
+            : [];
+
+        $this->table(
+            ['Requirement', 'Status', 'Details'],
+            [
+                [
+                    'Laravel Reverb',
+                    $this->composerStatus($reverb),
+                    $this->composerDetails($reverb),
+                ],
+                [
+                    'Guzzle',
+                    $this->composerStatus(
+                        $guzzle['guzzle'] ?? null,
+                    ),
+                    $this->composerDetails(
+                        $guzzle['guzzle'] ?? null,
+                    ),
+                ],
+                [
+                    'Guzzle PSR-7',
+                    $this->composerStatus(
+                        $guzzle['psr7'] ?? null,
+                    ),
+                    $this->composerDetails(
+                        $guzzle['psr7'] ?? null,
+                    ),
+                ],
+                [
+                    'Guzzle Promises',
+                    $this->composerStatus(
+                        $guzzle['promises'] ?? null,
+                    ),
+                    $this->composerDetails(
+                        $guzzle['promises'] ?? null,
+                    ),
+                ],
+                [
+                    'Broadcasting config',
+                    $this->booleanStatus(
+                        $configuration['broadcasting_config_exists'] ?? false,
+                    ),
+                    'config/broadcasting.php',
+                ],
+                [
+                    'Reverb config',
+                    $this->booleanStatus(
+                        $configuration['reverb_config_exists'] ?? false,
+                    ),
+                    'config/reverb.php',
+                ],
+                [
+                    'Broadcast channels route',
+                    $this->booleanStatus(
+                        $configuration['channels_route_exists'] ?? false,
+                    ),
+                    'routes/channels.php',
+                ],
+                [
+                    'WebSocket support ready',
+                    $this->booleanStatus(
+                        $environment['configured'] ?? false,
+                    ),
+                    '-',
+                ],
+            ],
+        );
+    }
+
+    private function displayReverbInstallationPlan(
+        ReverbInstallationPlan $plan,
+    ): void {
+        $this->table(
+            ['Plan flag', 'Value'],
+            [
+                [
+                    'Reverb package installed',
+                    $this->yesNo($plan->packageInstalled()),
+                ],
+                [
+                    'Composer install required',
+                    $this->yesNo($plan->requiresComposerInstall()),
+                ],
+                [
+                    'Reverb configuration required',
+                    $this->yesNo($plan->requiresConfiguration()),
+                ],
+                [
+                    'Dependency changes may be required',
+                    $this->yesNo(
+                        $plan->dependencyResolutionMayBeRequired(),
+                    ),
+                ],
+                [
+                    'WebSocket support ready',
+                    $this->yesNo($plan->configured()),
+                ],
+            ],
+        );
+
+        if ($plan->requiresComposerInstall()) {
+            $this->line(
+                'Composer package: '.$plan->packageRequirement(),
+            );
+        }
+    }
+
+    /**
+     * @param  list<string>  $steps
+     */
+    private function displayExecutedReverbSteps(array $steps): void
+    {
+        $this->newLine();
+        $this->components->info(
+            'LaraIoT WebSocket installation steps completed:',
+        );
+
+        foreach ($steps as $step) {
+            $this->line('  - '.$step);
         }
     }
 }
