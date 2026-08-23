@@ -37,6 +37,16 @@ class InstallLaraIoTCommand extends Command
 
         if ((bool) $this->option('ui')) {
             $uiStatus = $this->installUi();
+
+            if ($uiStatus === 'failed') {
+                $this->newLine();
+
+                $this->components->error(
+                    'LaraIoT installation stopped because the requested Vue UI could not be installed.',
+                );
+
+                return self::FAILURE;
+            }
         } elseif ((bool) $this->option('force')) {
             $this->components->warn(
                 'The --force option only applies to the optional UI and is ignored without --ui.',
@@ -74,9 +84,7 @@ class InstallLaraIoTCommand extends Command
             'WebSocket mode uses Laravel Reverb. Start it with "php artisan reverb:start" when websocket mode is enabled.',
         );
 
-        return $uiStatus === 'failed'
-            ? self::FAILURE
-            : self::SUCCESS;
+        return self::SUCCESS;
     }
 
     private function publishLaraIoTResources(): void
