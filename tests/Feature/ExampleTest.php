@@ -76,6 +76,13 @@ it('loads the package views', function () {
 
 it('registers and executes the installation command', function () {
     $this->artisan('laraiot:install', ['--force' => true])
+        ->expectsConfirmation(
+            'Install and configure Laravel Reverb for optional WebSocket mode now?',
+            'no',
+        )
+        ->expectsOutputToContain(
+            'No WebSocket infrastructure changes were made.',
+        )
         ->expectsOutputToContain('LaraIoT installed successfully.')
         ->expectsOutputToContain('php artisan migrate')
         ->assertSuccessful();
