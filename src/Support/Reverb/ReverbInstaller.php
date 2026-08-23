@@ -43,6 +43,9 @@ final class ReverbInstaller
         }
 
         if ($plan->requiresConfiguration()) {
+            $this->prepareBroadcastingInfrastructure();
+            $steps[] = 'prepare-broadcasting';
+
             $this->configureReverb($interactive);
             $steps[] = 'configure-reverb';
         }
@@ -53,6 +56,115 @@ final class ReverbInstaller
         return $steps;
     }
 
+    /**
+     * Prepare the Laravel broadcasting files before invoking reverb:install.
+     *
+     * Laravel Reverb 1.11 may call install:broadcasting with
+     * --no-interaction when routes/channels.php is missing. On a fresh
+     * Laravel 13 application that nested command can still require a driver
+     * selection and emit a NonInteractiveValidationException. Creating the
+     * framework-level broadcasting files first avoids that nested path while
+     * leaving Reverb responsible for its own configuration and environment
+     * variables.
+     */
+    private function prepareBroadcastingInfrastructure(): void
+    {
+        $broadcastingConfig = $this->path('config/broadcasting.php');
+
+        if (! is_file($broadcastingConfig)) {
+            $this->runProcess([
+                PHP_BINARY,
+                'artisan',
+                'config:publish',
+                'broadcasting',
+                '--no-interaction',
+            ]);
+
+            if (! is_file($broadcastingConfig)) {
+                throw new RuntimeException(
+                    'Laravel broadcasting configuration could not be published.',
+                );
+            }
+        }
+
+        $channelsPath = $this->path('routes/channels.php');
+
+        if (! is_file($channelsPath)) {
+            $this->writeFile(
+                $channelsPath,
+                <<<'PHPFILE'
+<?php
+
+use Illuminate\Support\Facades\Broadcast;
+PHPFILE
+                .PHP_EOL,
+            );
+        }
+
+        $this->registerBroadcastChannelsRoute();
+    }
+
+    /**
+     * Register routes/channels.php in bootstrap/app.php when the host
+     * application has not enabled broadcasting routes yet.
+     */
+    private function registerBroadcastChannelsRoute(): void
+    {
+        $path = $this->path('bootstrap/app.php');
+
+        if (! is_file($path) || ! is_readable($path)) {
+            throw new RuntimeException(
+                'Unable to read Laravel bootstrap file: '.$path,
+            );
+        }
+
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new RuntimeException(
+                'Unable to read Laravel bootstrap file: '.$path,
+            );
+        }
+
+        if (preg_match('/^\s*channels\s*:/m', $contents) === 1) {
+            return;
+        }
+
+        $commandsNeedle = "commands: __DIR__.'/../routes/console.php',";
+        $channelsLine = "channels: __DIR__.'/../routes/channels.php',";
+
+        if (str_contains($contents, $commandsNeedle)) {
+            $contents = str_replace(
+                $commandsNeedle,
+                $commandsNeedle.PHP_EOL.'        '.$channelsLine,
+                $contents,
+            );
+        } elseif (str_contains($contents, '->withRouting(')) {
+            $contents = preg_replace(
+                '/->withRouting\(\s*/',
+                "->withRouting(".PHP_EOL.'        '.$channelsLine.PHP_EOL.'        ',
+                $contents,
+                1,
+            );
+
+            if (! is_string($contents)) {
+                throw new RuntimeException(
+                    'Unable to register Laravel broadcast channel routes.',
+                );
+            }
+        } else {
+            throw new RuntimeException(
+                'Unable to register routes/channels.php in bootstrap/app.php automatically.',
+            );
+        }
+
+        if (file_put_contents($path, $contents) === false) {
+            throw new RuntimeException(
+                'Unable to update Laravel bootstrap file: '.$path,
+            );
+        }
+    }
+
     private function configureReverb(bool $interactive): void
     {
         if ($this->runFreshArtisanReverbInstall($interactive)) {
@@ -60,14 +172,10 @@ final class ReverbInstaller
         }
 
         /*
-         * On a clean Laravel application, Reverb may initialise the
-         * broadcasting infrastructure on the first pass and require a
-         * second fresh Artisan process to finish configuring the driver.
+         * Keep one defensive retry for host-specific cases where the first
+         * fresh process mutates configuration before returning unsuccessfully.
          */
-        if (
-            is_file($this->path('routes/channels.php'))
-            && $this->runFreshArtisanReverbInstall($interactive)
-        ) {
+        if ($this->runFreshArtisanReverbInstall($interactive)) {
             return;
         }
 
@@ -151,6 +259,29 @@ final class ReverbInstaller
             .implode(' ', $arguments)
             .($output === '' ? '' : PHP_EOL.$output),
         );
+    }
+
+    private function writeFile(
+        string $path,
+        string $contents,
+    ): void {
+        $directory = dirname($path);
+
+        if (
+            ! is_dir($directory)
+            && ! mkdir($directory, 0755, true)
+            && ! is_dir($directory)
+        ) {
+            throw new RuntimeException(
+                'Unable to create directory: '.$directory,
+            );
+        }
+
+        if (file_put_contents($path, $contents) === false) {
+            throw new RuntimeException(
+                'Unable to write file: '.$path,
+            );
+        }
     }
 
     private function path(string $relativePath): string
