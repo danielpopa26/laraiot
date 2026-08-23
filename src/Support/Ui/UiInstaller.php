@@ -475,7 +475,6 @@ BLADE;
             'resources/js/composables/laraiot/useLaraIoTUrl.js',
             'resources/js/layouts/laraiot/LaraIoTLayout.vue',
             'resources/js/pages/laraiot/Dashboard.vue',
-            'resources/js/styles/laraiot.css',
             'resources/css/laraiot.css',
         ];
 
