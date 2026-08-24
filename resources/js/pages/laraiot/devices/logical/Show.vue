@@ -21,6 +21,7 @@ useLaraIoTPolling([
     'logicalDevice',
     'mqttTopics',
     'deviceOverview',
+    'laraiot',
 ]);
 
 const topics = computed(() =>

@@ -171,6 +171,28 @@ return [
 
         /*
         |--------------------------------------------------------------------------
+        | MQTT Health Heartbeat
+        |--------------------------------------------------------------------------
+        |
+        | The listener and web processes must use the same cache store so the
+        | frontend can observe the latest heartbeat.
+        |
+        */
+
+        'health' => [
+            'cache_key' => env(
+                'LARAIOT_MQTT_HEALTH_CACHE_KEY',
+                'laraiot:mqtt:health',
+            ),
+
+            'stale_after' => env(
+                'LARAIOT_MQTT_HEALTH_STALE_AFTER',
+                20,
+            ),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
         | MQTT Topic Testing
         |--------------------------------------------------------------------------
         */

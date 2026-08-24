@@ -25,7 +25,29 @@ it('merges the package configuration', function () {
         ->and(config('laraiot.api.enabled'))->toBeTrue()
         ->and(config('laraiot.api.prefix'))->toBe('api/laraiot')
         ->and(config('laraiot.polling.interval'))->toBe(10)
-        ->and(config('laraiot.mqtt.port'))->toBe(1883);
+        ->and(config('laraiot.mqtt.port'))->toBe(1883)
+        ->and(config('laraiot.mqtt.health.stale_after'))
+        ->toBe(20)
+        ->and($packageConfig['mqtt']['health']['stale_after'])
+        ->toBe(20);
+});
+
+it('backfills MQTT health defaults for an older published config', function () {
+    config()->set('laraiot.mqtt', [
+        'host' => 'mqtt.legacy.test',
+        'port' => 1884,
+    ]);
+
+    (new LaraIoTServiceProvider($this->app))->register();
+
+    expect(config('laraiot.mqtt.host'))
+        ->toBe('mqtt.legacy.test')
+        ->and(config('laraiot.mqtt.port'))
+        ->toBe(1884)
+        ->and(config('laraiot.mqtt.health.cache_key'))
+        ->toBe('laraiot:mqtt:health')
+        ->and(config('laraiot.mqtt.health.stale_after'))
+        ->toBe(20);
 });
 
 it('registers the package publish groups', function () {

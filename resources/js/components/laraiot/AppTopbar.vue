@@ -10,6 +10,8 @@ import {
     Zap,
 } from 'lucide-vue-next';
 
+import { useLaraIoTPolling } from '../../composables/laraiot/useLaraIoTPolling.js';
+
 const emit = defineEmits(['toggle-sidebar']);
 const page = usePage();
 
@@ -34,6 +36,15 @@ const modeLabel = computed(() =>
 );
 
 const mqttLabel = computed(() => {
+    const reportedLabel = laraiot.value?.mqtt?.label;
+
+    if (
+        typeof reportedLabel === 'string'
+        && reportedLabel.trim() !== ''
+    ) {
+        return `MQTT ${reportedLabel.trim()}`;
+    }
+
     if (mqttConnected.value === true) {
         return 'MQTT Connected';
     }
@@ -43,6 +54,14 @@ const mqttLabel = computed(() => {
     }
 
     return 'MQTT Unknown';
+});
+
+const mqttDetail = computed(() => {
+    const detail = laraiot.value?.mqtt?.detail;
+
+    return typeof detail === 'string' && detail.trim() !== ''
+        ? detail.trim()
+        : mqttLabel.value;
 });
 
 const baseUrl = computed(() => {
@@ -62,6 +81,16 @@ const relativePath = computed(() => {
 
     return current.replace(/^\/+/, '');
 });
+
+const pageRefreshesMqttHealth = computed(() =>
+    relativePath.value === ''
+    || /^devices\/logical\/\d+$/.test(relativePath.value),
+);
+
+useLaraIoTPolling(
+    ['laraiot'],
+    () => !pageRefreshesMqttHealth.value,
+);
 
 const pageTitle = computed(() => {
     const explicitTitle = laraiot.value?.pageTitle;
@@ -127,12 +156,14 @@ const pageTitle = computed(() => {
 
             <div
                 class="flex h-10 items-center gap-2 rounded-full border px-3 text-xs font-semibold"
+                :title="mqttDetail"
                 :class="{
                     'border-emerald-200 bg-emerald-50 text-[#059669]': mqttConnected === true,
                     'border-red-200 bg-red-50 text-[#DC2626]': mqttConnected === false,
                     'border-slate-200 bg-slate-50 text-slate-500': mqttConnected === null,
                 }"
                 role="status"
+                :aria-label="mqttLabel"
             >
                 <span class="relative flex size-2">
                     <span

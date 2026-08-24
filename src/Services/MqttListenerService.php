@@ -7,6 +7,7 @@ namespace Danpopa\LaraIoT\Services;
 use Closure;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use PhpMqtt\Client\Contracts\MqttClient;
+use Throwable;
 
 final class MqttListenerService
 {
@@ -20,16 +21,26 @@ final class MqttListenerService
     public function __construct(
         private readonly MqttConnectionService $connectionService,
         private readonly MqttMessageHandler $messageHandler,
+        private readonly MqttHealthMonitor $healthMonitor,
     ) {}
 
     public function listen(): void
     {
-        $client = $this->connectionService->connect(
-            $this->listenerClientId(),
-        );
+        try {
+            $client = $this->connectionService->connect(
+                $this->listenerClientId(),
+            );
+        } catch (Throwable $exception) {
+            $this->healthMonitor->markDisconnected(
+                $exception->getMessage(),
+            );
+
+            throw $exception;
+        }
 
         $this->client = $client;
         $this->subscriptions = [];
+        $failed = false;
 
         $syncInterval = max(
             1,
@@ -42,7 +53,12 @@ final class MqttListenerService
         $lastSyncAt = 0.0;
 
         try {
+            $this->healthMonitor->markConnected();
+
             $this->syncSubscriptions($client);
+            $this->healthMonitor->heartbeat(
+                count($this->subscriptions),
+            );
 
             $client->registerLoopEventHandler(
                 function (
@@ -62,10 +78,21 @@ final class MqttListenerService
                     $lastSyncAt = $elapsedTime;
 
                     $this->syncSubscriptions($mqtt);
+                    $this->healthMonitor->heartbeat(
+                        count($this->subscriptions),
+                    );
                 },
             );
 
             $client->loop(true);
+        } catch (Throwable $exception) {
+            $failed = true;
+
+            $this->healthMonitor->markDisconnected(
+                $exception->getMessage(),
+            );
+
+            throw $exception;
         } finally {
             try {
                 if ($client->isConnected()) {
@@ -74,6 +101,10 @@ final class MqttListenerService
             } finally {
                 $this->client = null;
                 $this->subscriptions = [];
+
+                if (! $failed) {
+                    $this->healthMonitor->markStopped();
+                }
             }
         }
     }
@@ -149,6 +180,10 @@ final class MqttListenerService
             bool $_retained,
             array $_matchedWildcards,
         ): void {
+            $this->healthMonitor->markMessageReceived(
+                count($this->subscriptions),
+            );
+
             $this->messageHandler->handle(
                 $topic,
                 $payload,

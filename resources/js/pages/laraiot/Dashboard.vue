@@ -54,9 +54,17 @@ useLaraIoTPolling([
     'physicalDevices',
     'recentActivity',
     'mqtt',
+    'laraiot',
 ]);
 
 const mqttLabel = computed(() => {
+    if (
+        typeof props.mqtt.label === 'string'
+        && props.mqtt.label.trim() !== ''
+    ) {
+        return props.mqtt.label.trim();
+    }
+
     if (props.mqtt.connected === true) return 'Connected';
     if (props.mqtt.connected === false) return 'Disconnected';
 
@@ -67,9 +75,21 @@ const mqttTone = computed(() =>
     props.mqtt.connected === true
         ? 'green'
         : props.mqtt.connected === false
-            ? 'slate'
+            ? 'red'
             : 'slate',
 );
+
+const mqttDescription = computed(() => {
+    const topicCount = props.statistics.mqttTopics;
+    const configuredTopics = `${topicCount} configured MQTT topic${topicCount === 1 ? '' : 's'}`;
+    const detail = props.mqtt.detail;
+
+    if (typeof detail !== 'string' || detail.trim() === '') {
+        return configuredTopics;
+    }
+
+    return `${detail.trim()} ${configuredTopics}.`;
+});
 
 const activityStatus = (status) => {
     if (['success', 'warning', 'danger', 'info'].includes(status)) {
@@ -130,7 +150,7 @@ const activityStatus = (status) => {
                 <StatCard
                     title="MQTT Broker"
                     :value="mqttLabel"
-                    :description="`${statistics.mqttTopics} configured MQTT topics`"
+                    :description="mqttDescription"
                     :icon="mqtt.connected === false ? WifiOff : Radio"
                     :tone="mqttTone"
                 />

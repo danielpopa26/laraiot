@@ -5,7 +5,11 @@ declare(strict_types=1);
 use Danpopa\LaraIoT\Models\ActivityLog;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Danpopa\LaraIoT\Services\MqttHealthMonitor;
 use Danpopa\LaraIoT\Tests\Support\UiTestData;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository as CacheRepository;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Inertia\Testing\AssertableInertia as Assert;
 
 it('renders the LaraIoT dashboard with real summary values', function () {
@@ -53,6 +57,8 @@ it('renders the LaraIoT dashboard with real summary values', function () {
                 )
                 ->where('mode', 'polling')
                 ->where('mqtt.connected', null)
+                ->where('mqtt.status', 'unknown')
+                ->where('mqtt.label', 'Unknown')
                 ->has('recentActivity', 1)
                 ->where(
                     'recentActivity.0.message',
@@ -78,6 +84,42 @@ it('renders the LaraIoT dashboard with real summary values', function () {
                 ->where(
                     'laraiot.baseUrl',
                     '/laraiot',
+                )
+                ->where(
+                    'laraiot.mqtt.status',
+                    'unknown',
+                ),
+        );
+});
+
+it('shares a recent MQTT listener heartbeat with the dashboard and topbar', function () {
+    $healthMonitor = new MqttHealthMonitor(
+        new CacheRepository(new ArrayStore),
+        app(ConfigRepository::class),
+    );
+    $healthMonitor->markConnected(3);
+
+    $this->app->instance(
+        MqttHealthMonitor::class,
+        $healthMonitor,
+    );
+
+    $this
+        ->get(route('laraiot.dashboard'))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('mqtt.connected', true)
+                ->where('mqtt.status', 'connected')
+                ->where('mqtt.label', 'Connected')
+                ->where('mqtt.subscriptions', 3)
+                ->where(
+                    'laraiot.mqtt.connected',
+                    true,
+                )
+                ->where(
+                    'laraiot.mqtt.status',
+                    'connected',
                 ),
         );
 });

@@ -9,6 +9,7 @@ use Danpopa\LaraIoT\Models\ApplicationSetting;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Danpopa\LaraIoT\Services\MqttHealthMonitor;
 use Danpopa\LaraIoT\Support\Ui\LogicalDevicePresenter;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
@@ -18,6 +19,7 @@ final class DashboardController extends Controller
 {
     public function __invoke(
         LogicalDevicePresenter $logicalDevicePresenter,
+        MqttHealthMonitor $mqttHealthMonitor,
     ): Response {
         $settings = ApplicationSetting::current();
 
@@ -91,14 +93,7 @@ final class DashboardController extends Controller
                 ],
                 'physicalDevices' => $physicalDevices,
                 'recentActivity' => $recentActivity,
-                'mqtt' => [
-                    /*
-                     * LaraIoT currently has no persistent MQTT
-                     * health state. Do not report a false
-                     * connected/disconnected value.
-                     */
-                    'connected' => null,
-                ],
+                'mqtt' => $mqttHealthMonitor->snapshot(),
                 'mode' => $settings->application_mode,
             ],
         );

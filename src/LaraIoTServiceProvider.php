@@ -14,6 +14,7 @@ use Danpopa\LaraIoT\Models\ApplicationSetting;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Observers\MqttTopicObserver;
 use Danpopa\LaraIoT\Services\MqttConnectionService;
+use Danpopa\LaraIoT\Services\MqttHealthMonitor;
 use Danpopa\LaraIoT\Services\MqttPublisher;
 use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
 use Illuminate\Support\Facades\Broadcast;
@@ -25,10 +26,14 @@ class LaraIoTServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $configPath = __DIR__.'/../config/laraiot.php';
+
         $this->mergeConfigFrom(
-            __DIR__.'/../config/laraiot.php',
+            $configPath,
             'laraiot',
         );
+
+        $this->mergeMqttHealthConfig($configPath);
 
         $this->app->singleton(LaraIoT::class);
 
@@ -41,11 +46,36 @@ class LaraIoTServiceProvider extends ServiceProvider
             MqttConnectionService::class,
         );
 
+        $this->app->singleton(MqttHealthMonitor::class);
+
         $this->app->singleton(MqttPublisher::class);
 
         $this->app->singleton(
             MqttPublisherContract::class,
             MqttPublisher::class,
+        );
+    }
+
+    private function mergeMqttHealthConfig(string $configPath): void
+    {
+        $packageConfig = require $configPath;
+        $mqttDefaults = is_array($packageConfig)
+            ? ($packageConfig['mqtt'] ?? [])
+            : [];
+        $healthDefaults = is_array($mqttDefaults)
+            ? ($mqttDefaults['health'] ?? [])
+            : [];
+        $configured = $this->app['config']->get(
+            'laraiot.mqtt.health',
+            [],
+        );
+
+        $this->app['config']->set(
+            'laraiot.mqtt.health',
+            array_replace(
+                is_array($healthDefaults) ? $healthDefaults : [],
+                is_array($configured) ? $configured : [],
+            ),
         );
     }
 
@@ -82,8 +112,7 @@ class LaraIoTServiceProvider extends ServiceProvider
 
         Broadcast::channel(
             LogicalDeviceStateUpdated::CHANNEL,
-            static fn (mixed $user): bool =>
-                $user !== null,
+            static fn (mixed $user): bool => $user !== null,
         );
 
         if (! $this->app->runningInConsole()) {
@@ -91,18 +120,16 @@ class LaraIoTServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/../config/laraiot.php' =>
-                config_path('laraiot.php'),
+            __DIR__.'/../config/laraiot.php' => config_path('laraiot.php'),
         ], [
             'laraiot',
             'laraiot-config',
         ]);
 
         $this->publishes([
-            __DIR__.'/../resources/views' =>
-                resource_path(
-                    'views/vendor/laraiot',
-                ),
+            __DIR__.'/../resources/views' => resource_path(
+                'views/vendor/laraiot',
+            ),
         ], [
             'laraiot',
             'laraiot-views',
@@ -114,30 +141,27 @@ class LaraIoTServiceProvider extends ServiceProvider
         ], ['laraiot', 'laraiot-ui']);
 
         $this->publishes([
-            __DIR__.'/../lang' =>
-                $this->app->langPath(
-                    'vendor/laraiot',
-                ),
+            __DIR__.'/../lang' => $this->app->langPath(
+                'vendor/laraiot',
+            ),
         ], [
             'laraiot',
             'laraiot-lang',
         ]);
 
         $this->publishes([
-            __DIR__.'/../public' =>
-                public_path(
-                    'vendor/laraiot',
-                ),
+            __DIR__.'/../public' => public_path(
+                'vendor/laraiot',
+            ),
         ], [
             'laraiot',
             'laraiot-assets',
         ]);
 
         $this->publishesMigrations([
-            __DIR__.'/../database/migrations' =>
-                database_path(
-                    'migrations',
-                ),
+            __DIR__.'/../database/migrations' => database_path(
+                'migrations',
+            ),
         ], [
             'laraiot',
             'laraiot-migrations',
@@ -169,14 +193,11 @@ class LaraIoTServiceProvider extends ServiceProvider
                 );
 
                 try {
-                    $settings =
-                        ApplicationSetting::current();
+                    $settings = ApplicationSetting::current();
 
-                    $mode =
-                        $settings->application_mode;
+                    $mode = $settings->application_mode;
 
-                    $pollingInterval =
-                        $settings->polling_interval;
+                    $pollingInterval = $settings->polling_interval;
                 } catch (Throwable) {
                     /*
                      * The UI can be enabled before the host
@@ -196,11 +217,10 @@ class LaraIoTServiceProvider extends ServiceProvider
                 return [
                     'baseUrl' => '/'.$prefix,
                     'mode' => $mode,
-                    'pollingInterval' =>
-                        $pollingInterval,
-                    'mqtt' => [
-                        'connected' => null,
-                    ],
+                    'pollingInterval' => $pollingInterval,
+                    'mqtt' => $this->app
+                        ->make(MqttHealthMonitor::class)
+                        ->snapshot(),
                     'message' => session(
                         'laraiot_message',
                     ),

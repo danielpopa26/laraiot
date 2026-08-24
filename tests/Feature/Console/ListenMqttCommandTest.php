@@ -3,9 +3,25 @@
 declare(strict_types=1);
 
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
+use Danpopa\LaraIoT\Services\MqttHealthMonitor;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository as CacheRepository;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Facades\Artisan;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Contracts\MqttClient as MqttClientContract;
+
+beforeEach(function () {
+    $this->mqttHealthMonitor = new MqttHealthMonitor(
+        new CacheRepository(new ArrayStore),
+        app(ConfigRepository::class),
+    );
+
+    $this->app->instance(
+        MqttHealthMonitor::class,
+        $this->mqttHealthMonitor,
+    );
+});
 
 it('registers the MQTT listener command', function () {
     expect(Artisan::all())
@@ -87,4 +103,11 @@ it('returns a failure exit code when the MQTT connection fails', function () {
             'Unable to connect to the MQTT broker at 127.0.0.1:1883.',
         )
         ->assertFailed();
+
+    $snapshot = $this->mqttHealthMonitor->snapshot();
+
+    expect($snapshot['connected'])->toBeFalse()
+        ->and($snapshot['status'])->toBe('disconnected')
+        ->and($snapshot['error'])
+        ->toBe('Unable to connect to the MQTT broker at 127.0.0.1:1883.');
 });

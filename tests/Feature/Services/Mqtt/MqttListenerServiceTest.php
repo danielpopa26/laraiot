@@ -7,7 +7,11 @@ use Danpopa\LaraIoT\Models\DeviceType;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Danpopa\LaraIoT\Services\MqttHealthMonitor;
 use Danpopa\LaraIoT\Services\MqttListenerService;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository as CacheRepository;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Contracts\MqttClient as MqttClientContract;
 
@@ -20,6 +24,16 @@ beforeEach(function () {
     config()->set(
         'laraiot.mqtt.listener.sync_interval',
         5,
+    );
+
+    $this->mqttHealthMonitor = new MqttHealthMonitor(
+        new CacheRepository(new ArrayStore),
+        app(ConfigRepository::class),
+    );
+
+    $this->app->instance(
+        MqttHealthMonitor::class,
+        $this->mqttHealthMonitor,
     );
 
     $deviceType = DeviceType::query()->create([
@@ -135,7 +149,13 @@ it('subscribes once to each enabled validated state MQTT topic using its highest
     $client->shouldReceive('loop')
         ->once()
         ->with(true)
-        ->andReturnNull();
+        ->andReturnUsing(function (): void {
+            $snapshot = $this->mqttHealthMonitor->snapshot();
+
+            expect($snapshot['connected'])->toBeTrue()
+                ->and($snapshot['status'])->toBe('connected')
+                ->and($snapshot['subscriptions'])->toBe(1);
+        });
 
     $client->shouldReceive('isConnected')
         ->once()
@@ -164,6 +184,9 @@ it('subscribes once to each enabled validated state MQTT topic using its highest
     $this->app
         ->make(MqttListenerService::class)
         ->listen();
+
+    expect($this->mqttHealthMonitor->snapshot()['status'])
+        ->toBe('offline');
 });
 
 it('forwards received MQTT messages to the message handler', function () {
@@ -259,7 +282,11 @@ it('forwards received MQTT messages to the message handler', function () {
     expect($mqttTopic->last_payload)->toBe('ON')
         ->and($mqttTopic->last_value)->toBeTrue()
         ->and($mqttTopic->last_received_at)->not->toBeNull()
-        ->and($mqttTopic->last_error)->toBeNull();
+        ->and($mqttTopic->last_error)->toBeNull()
+        ->and(
+            $this->mqttHealthMonitor
+                ->snapshot()['last_message_at'],
+        )->not->toBeNull();
 });
 
 it('synchronizes MQTT subscriptions while the listener is running', function () {

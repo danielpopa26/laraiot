@@ -26,7 +26,7 @@ const props = defineProps({
     tone: {
         type: String,
         default: 'blue',
-        validator: (value) => ['blue', 'green', 'purple', 'slate'].includes(value),
+        validator: (value) => ['blue', 'green', 'purple', 'red', 'slate'].includes(value),
     },
 });
 
@@ -35,6 +35,7 @@ const toneClasses = computed(() => {
         blue: 'bg-blue-50 text-[#2583FF]',
         green: 'bg-emerald-50 text-[#059669]',
         purple: 'bg-violet-50 text-[#7C3AED]',
+        red: 'bg-red-50 text-[#DC2626]',
         slate: 'bg-slate-100 text-slate-600',
     };
 
