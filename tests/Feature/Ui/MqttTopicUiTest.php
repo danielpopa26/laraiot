@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Tests\Support\UiTestData;
+use Inertia\Testing\AssertableInertia as Assert;
 
 it('stores a state topic and builds its payload mapping', function () {
     $tree = UiTestData::deviceTree();
@@ -176,6 +177,34 @@ it('rejects a nested MQTT topic belonging to another logical device', function (
             ),
         )
         ->assertNotFound();
+});
+
+it('provides purpose-specific validation timeouts to the topic editor', function () {
+    $tree = UiTestData::deviceTree();
+    $stateTopic = UiTestData::stateTopic($tree['logicalDevice']);
+    $commandTopic = UiTestData::commandTopic($tree['logicalDevice']);
+
+    $this
+        ->get(route('laraiot.mqtt-topics.edit', [
+            'logicalDevice' => $tree['logicalDevice'],
+            'mqttTopic' => $stateTopic,
+        ]))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('validationTimeout', 30),
+        );
+
+    $this
+        ->get(route('laraiot.mqtt-topics.edit', [
+            'logicalDevice' => $tree['logicalDevice'],
+            'mqttTopic' => $commandTopic,
+        ]))
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where('validationTimeout', 12),
+        );
 });
 
 it('requires a state topic id before validating a command topic', function () {

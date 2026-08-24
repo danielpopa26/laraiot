@@ -104,7 +104,7 @@ final class PhysicalDeviceController extends Controller
     ): RedirectResponse {
         if ($physicalDevice->logicalDevices()->exists()) {
             return back()->withErrors([
-                'delete' => 'This physical device contains one or more logical devices.',
+                'delete' => 'To delete this physical device, first delete all associated logical devices.',
             ]);
         }
 

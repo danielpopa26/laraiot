@@ -66,6 +66,21 @@ it('creates and updates a device type', function () {
         ->toBeFalse();
 });
 
+it('rejects a non-technical device type identifier', function () {
+    $this->post(
+        route('laraiot.device-types.store'),
+        [
+            'identifier' => 'Soil Moisture',
+            'name' => 'Soil Moisture',
+            'description' => null,
+            'is_enabled' => true,
+        ],
+    )
+        ->assertSessionHasErrors('identifier');
+
+    expect(DeviceType::query()->count())->toBe(0);
+});
+
 it('does not delete a device type used by logical devices', function () {
     $tree = UiTestData::deviceTree();
 

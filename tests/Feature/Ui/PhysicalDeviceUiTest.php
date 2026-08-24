@@ -141,3 +141,19 @@ it('does not delete a physical device which contains logical devices', function 
         ],
     );
 });
+
+it('deletes a physical device without logical devices', function () {
+    $physicalDevice = PhysicalDevice::query()->create([
+        'identifier' => 'unused-controller',
+        'name' => 'Unused Controller',
+        'is_enabled' => true,
+    ]);
+
+    $this->delete(
+        route('laraiot.physical-devices.destroy', $physicalDevice),
+    )->assertRedirect(route('laraiot.physical-devices.index'));
+
+    $this->assertDatabaseMissing('laraiot_physical_devices', [
+        'id' => $physicalDevice->getKey(),
+    ]);
+});

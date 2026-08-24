@@ -198,9 +198,14 @@ return [
         */
 
         'testing' => [
-            'timeout' => env(
-                'LARAIOT_MQTT_TEST_TIMEOUT',
-                10,
+            'state_timeout' => env(
+                'LARAIOT_MQTT_STATE_TEST_TIMEOUT',
+                30,
+            ),
+
+            'command_timeout' => env(
+                'LARAIOT_MQTT_COMMAND_TEST_TIMEOUT',
+                12,
             ),
 
             'token_ttl' => env(

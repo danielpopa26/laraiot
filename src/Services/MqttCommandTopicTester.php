@@ -87,8 +87,8 @@ final class MqttCommandTopicTester
         $timeout = max(
             1,
             (int) config(
-                'laraiot.mqtt.testing.timeout',
-                10,
+                'laraiot.mqtt.testing.command_timeout',
+                12,
             ),
         );
 

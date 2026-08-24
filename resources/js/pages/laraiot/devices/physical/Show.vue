@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, Boxes, Cpu, EthernetPort, FileText, Fingerprint, Network, Pencil, Trash2 } from 'lucide-vue-next';
 
@@ -13,8 +14,11 @@ const props = defineProps({
 
 const { laraiotUrl } = useLaraIoTUrl();
 const deleteForm = useForm({});
+const canDelete = computed(() => props.logicalDevices.length === 0);
 
 const deleteDevice = () => {
+    if (!canDelete.value) return;
+
     if (!window.confirm('Are you sure you want to delete this physical device?')) {
         return;
     }
@@ -191,14 +195,20 @@ const deleteDevice = () => {
                             Delete Physical Device
                         </p>
                         <p class="mt-1 text-sm text-slate-500">
-                            This action cannot be undone.
+                            <template v-if="canDelete">
+                                This action cannot be undone.
+                            </template>
+                            <template v-else>
+                                To delete this physical device, first delete all associated logical devices.
+                            </template>
                         </p>
+                        <p v-if="deleteForm.errors.delete" class="mt-2 text-sm text-red-600">{{ deleteForm.errors.delete }}</p>
                     </div>
 
                     <button
                         type="button"
-                        :disabled="deleteForm.processing"
-                        class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                        :disabled="!canDelete || deleteForm.processing"
+                        class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-transparent"
                         @click="deleteDevice"
                     >
                         <Trash2 class="size-4" />

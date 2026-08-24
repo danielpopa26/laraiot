@@ -73,6 +73,15 @@ final class MqttTopicController extends Controller
                     ->where('purpose', 'state')
                     ->orderBy('topic')
                     ->get(),
+                'validationTimeout' => max(
+                    1,
+                    (int) config(
+                        $mqttTopic->purpose === 'state'
+                            ? 'laraiot.mqtt.testing.state_timeout'
+                            : 'laraiot.mqtt.testing.command_timeout',
+                        $mqttTopic->purpose === 'state' ? 30 : 12,
+                    ),
+                ),
             ],
         );
     }

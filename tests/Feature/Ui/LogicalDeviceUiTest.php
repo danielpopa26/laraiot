@@ -185,3 +185,18 @@ it('does not delete a logical device which has MQTT topics', function () {
         ],
     );
 });
+
+it('deletes a logical device without MQTT topics', function () {
+    $tree = UiTestData::deviceTree();
+
+    $this->delete(
+        route(
+            'laraiot.logical-devices.destroy',
+            $tree['logicalDevice'],
+        ),
+    )->assertRedirect(route('laraiot.logical-devices.index'));
+
+    $this->assertDatabaseMissing('laraiot_logical_devices', [
+        'id' => $tree['logicalDevice']->getKey(),
+    ]);
+});

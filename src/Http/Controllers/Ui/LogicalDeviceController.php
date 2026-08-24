@@ -143,7 +143,7 @@ final class LogicalDeviceController extends Controller
     ): RedirectResponse {
         if ($logicalDevice->mqttTopics()->exists()) {
             return back()->withErrors([
-                'delete' => 'This logical device has one or more MQTT topics assigned.',
+                'delete' => 'To delete this logical device, first delete all associated MQTT topics.',
             ]);
         }
 

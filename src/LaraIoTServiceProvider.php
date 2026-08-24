@@ -35,6 +35,7 @@ class LaraIoTServiceProvider extends ServiceProvider
         );
 
         $this->mergeMqttHealthConfig($configPath);
+        $this->mergeMqttTestingConfig($configPath);
         $this->mergeWebsocketHealthConfig($configPath);
 
         $this->app->singleton(LaraIoT::class);
@@ -101,6 +102,29 @@ class LaraIoTServiceProvider extends ServiceProvider
             'laraiot.websocket.health',
             array_replace(
                 is_array($healthDefaults) ? $healthDefaults : [],
+                is_array($configured) ? $configured : [],
+            ),
+        );
+    }
+
+    private function mergeMqttTestingConfig(string $configPath): void
+    {
+        $packageConfig = require $configPath;
+        $mqttDefaults = is_array($packageConfig)
+            ? ($packageConfig['mqtt'] ?? [])
+            : [];
+        $testingDefaults = is_array($mqttDefaults)
+            ? ($mqttDefaults['testing'] ?? [])
+            : [];
+        $configured = $this->app['config']->get(
+            'laraiot.mqtt.testing',
+            [],
+        );
+
+        $this->app['config']->set(
+            'laraiot.mqtt.testing',
+            array_replace(
+                is_array($testingDefaults) ? $testingDefaults : [],
                 is_array($configured) ? $configured : [],
             ),
         );

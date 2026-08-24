@@ -6,7 +6,6 @@ import {
     Boxes,
     Cpu,
     Radio,
-    RefreshCw,
     WifiOff,
     Zap,
 } from 'lucide-vue-next';
@@ -17,7 +16,6 @@ import StatCard from '../../components/laraiot/StatCard.vue';
 import StatusBadge from '../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
 import { useLaraIoTPolling } from '../../composables/laraiot/useLaraIoTPolling.js';
-import { websocketConnectionStatus } from '../../composables/laraiot/useLaraIoTWebSocketHealth.js';
 
 const props = defineProps({
     statistics: {
@@ -74,62 +72,33 @@ useLaraIoTPolling([
     'laraiot',
 ]);
 
-const communicationStatus = computed(() => {
-    if (props.requestedMode !== 'websocket') {
-        return 'polling';
+const websocketPresentation = computed(() => {
+    if (props.websocket.configured !== true) {
+        return {
+            label: 'Not configured',
+            description: 'Laravel Reverb support is not configured.',
+            icon: Zap,
+            tone: 'slate',
+        };
     }
 
-    if (props.fallbackActive || props.websocket.live !== true) {
-        return 'fallback';
+    if (props.websocket.live === true) {
+        return {
+            label: 'Live',
+            description: 'Laravel Reverb is accepting WebSocket connections.',
+            icon: Zap,
+            tone: 'green',
+        };
     }
 
-    if (websocketConnectionStatus.value === 'connected') {
-        return 'live';
-    }
-
-    if (
-        websocketConnectionStatus.value === 'idle'
-        || websocketConnectionStatus.value === 'connecting'
-    ) {
-        return 'connecting';
-    }
-
-    return 'fallback';
-});
-
-const communicationPresentation = computed(() => ({
-    polling: {
-        label: 'Polling',
-        description: 'Periodic frontend updates',
-        icon: RefreshCw,
-        tone: 'slate',
-        badge: 'info',
-    },
-    live: {
-        label: 'WebSocket Live',
-        description: 'Reverb and browser connection are live',
-        icon: Zap,
-        tone: 'purple',
-        badge: 'success',
-    },
-    connecting: {
-        label: 'WebSocket Connecting',
-        description: 'Establishing the browser connection',
-        icon: Zap,
-        tone: 'purple',
-        badge: 'info',
-    },
-    fallback: {
-        label: 'Polling Fallback',
-        description: props.websocket.live === true
-            ? 'The browser WebSocket connection is unavailable; polling remains active'
-            : props.websocket.detail
-                ?? 'WebSocket is unavailable; polling remains active',
-        icon: RefreshCw,
+    return {
+        label: 'Offline',
+        description: props.websocket.detail
+            ?? 'Laravel Reverb is configured, but the server is not responding.',
+        icon: WifiOff,
         tone: 'red',
-        badge: 'warning',
-    },
-}[communicationStatus.value]));
+    };
+});
 
 const mqttLabel = computed(() => {
     if (
@@ -179,7 +148,7 @@ const activityStatus = (status) => {
 
     <LaraIoTLayout>
         <div class="space-y-6">
-            <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <section>
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.16em] text-[#2583FF]">
                         System overview
@@ -192,11 +161,6 @@ const activityStatus = (status) => {
                     </p>
                 </div>
 
-                <StatusBadge
-                    :label="communicationPresentation.label"
-                    :status="communicationPresentation.badge"
-                    size="md"
-                />
             </section>
 
             <section
@@ -230,11 +194,11 @@ const activityStatus = (status) => {
                 />
 
                 <StatCard
-                    title="Communication Mode"
-                    :value="communicationPresentation.label"
-                    :description="communicationPresentation.description"
-                    :icon="communicationPresentation.icon"
-                    :tone="communicationPresentation.tone"
+                    title="WebSocket Server"
+                    :value="websocketPresentation.label"
+                    :description="websocketPresentation.description"
+                    :icon="websocketPresentation.icon"
+                    :tone="websocketPresentation.tone"
                 />
             </section>
 
@@ -273,7 +237,7 @@ const activityStatus = (status) => {
                     </p>
                 </div>
 
-                <div v-else class="grid gap-4 xl:grid-cols-2">
+                <div v-else class="grid items-stretch gap-4 xl:grid-cols-2">
                     <PhysicalDeviceCard
                         v-for="physicalDevice in physicalDevices"
                         :key="physicalDevice.id"

@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import {
     Cpu,
@@ -11,7 +12,7 @@ import LogicalDeviceControl from './LogicalDeviceControl.vue';
 import StatusBadge from './StatusBadge.vue';
 import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
 
-defineProps({
+const props = defineProps({
     physicalDevice: {
         type: Object,
         required: true,
@@ -19,10 +20,28 @@ defineProps({
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
+
+const visibleLogicalDevices = computed(() =>
+    [...(props.physicalDevice.logical_devices ?? [])]
+        .sort((left, right) => {
+            const leftHasCommand = left.command_topic ? 1 : 0;
+            const rightHasCommand = right.command_topic ? 1 : 0;
+
+            return rightHasCommand - leftHasCommand;
+        })
+        .slice(0, 2),
+);
+
+const hiddenLogicalDeviceCount = computed(() =>
+    Math.max(
+        0,
+        (props.physicalDevice.logical_devices?.length ?? 0) - 2,
+    ),
+);
 </script>
 
 <template>
-    <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.025]">
+    <article class="flex h-full min-h-[30rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-900/[0.025]">
         <header class="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="flex min-w-0 items-start gap-3">
                 <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#2583FF]">
@@ -74,8 +93,8 @@ const { laraiotUrl } = useLaraIoTUrl();
         </header>
 
         <div
-            v-if="physicalDevice.logical_devices.length === 0"
-            class="flex min-h-44 flex-col items-center justify-center px-6 py-10 text-center"
+            v-if="(physicalDevice.logical_devices?.length ?? 0) === 0"
+            class="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center"
         >
             <span class="flex size-11 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
                 <Network class="size-5" />
@@ -93,14 +112,31 @@ const { laraiotUrl } = useLaraIoTUrl();
             </p>
         </div>
 
-        <div v-else class="space-y-3 p-4">
+        <div v-else class="flex-1 space-y-3 p-4">
             <LogicalDeviceControl
-                v-for="logicalDevice in physicalDevice.logical_devices"
+                v-for="logicalDevice in visibleLogicalDevices"
                 :key="logicalDevice.id"
                 :device="logicalDevice"
                 compact
                 :reload-props="['physicalDevices', 'recentActivity']"
+                :show-configuration-link="false"
             />
+
+            <p
+                v-if="hiddenLogicalDeviceCount > 0"
+                class="px-1 text-xs font-medium text-slate-500"
+            >
+                + {{ hiddenLogicalDeviceCount }} additional logical device{{ hiddenLogicalDeviceCount === 1 ? '' : 's' }}
+            </p>
         </div>
+
+        <footer class="border-t border-slate-100 px-5 py-3 text-right">
+            <Link
+                :href="laraiotUrl(`devices/physical/${physicalDevice.id}`)"
+                class="text-xs font-medium text-[#2583FF] hover:text-blue-700"
+            >
+                View device details
+            </Link>
+        </footer>
     </article>
 </template>

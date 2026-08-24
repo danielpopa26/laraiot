@@ -8,6 +8,7 @@ use Danpopa\LaraIoT\Models\DeviceType;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 
@@ -129,7 +130,7 @@ it('persists model casts and resolves relationships', function () {
         )->toBeTrue();
 });
 
-it('deletes MQTT topics with their logical device', function () {
+it('restricts deleting a logical device which still has MQTT topics', function () {
     $deviceType = DeviceType::query()->create([
         'identifier' => 'cascade-relay',
         'name' => 'Cascade relay',
@@ -156,13 +157,57 @@ it('deletes MQTT topics with their logical device', function () {
         'is_enabled' => true,
     ]);
 
-    $logicalDevice->delete();
+    expect(
+        fn () => $logicalDevice->delete(),
+    )->toThrow(QueryException::class);
 
     expect(
         MqttTopic::query()
             ->whereKey($mqttTopic->getKey())
             ->exists(),
-    )->toBeFalse();
+    )->toBeTrue()
+        ->and(
+            LogicalDevice::query()
+                ->whereKey($logicalDevice->getKey())
+                ->exists(),
+        )->toBeTrue();
+});
+
+it('restricts deleting a physical device which still has logical devices', function () {
+    $deviceType = DeviceType::query()->create([
+        'identifier' => 'physical-delete-relay',
+        'name' => 'Physical delete relay',
+        'is_enabled' => true,
+    ]);
+
+    $physicalDevice = PhysicalDevice::query()->create([
+        'identifier' => 'physical-delete-controller',
+        'name' => 'Physical delete controller',
+        'is_enabled' => true,
+    ]);
+
+    $logicalDevice = LogicalDevice::query()->create([
+        'physical_device_id' => $physicalDevice->getKey(),
+        'device_type_id' => $deviceType->getKey(),
+        'identifier' => 'physical-delete-logical-relay',
+        'name' => 'Physical delete logical relay',
+        'is_enabled' => true,
+    ]);
+
+    expect(
+        fn () => $physicalDevice->delete(),
+    )->toThrow(QueryException::class);
+
+    expect(
+        PhysicalDevice::query()
+            ->whereKey($physicalDevice->getKey())
+            ->exists(),
+    )->toBeTrue()
+        ->and(
+            LogicalDevice::query()
+                ->whereKey($logicalDevice->getKey())
+                ->exists(),
+        )->toBeTrue();
 });
 
 it('returns the current singleton application settings', function () {

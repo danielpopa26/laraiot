@@ -27,6 +27,7 @@ final class PhysicalDeviceRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
+                'regex:/^[a-z0-9_-]+$/',
                 Rule::unique(
                     'laraiot_physical_devices',
                     'identifier',

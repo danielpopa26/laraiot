@@ -28,6 +28,10 @@ it('merges the package configuration', function () {
         ->and(config('laraiot.mqtt.port'))->toBe(1883)
         ->and(config('laraiot.mqtt.health.stale_after'))
         ->toBe(20)
+        ->and(config('laraiot.mqtt.testing.state_timeout'))
+        ->toBe(30)
+        ->and(config('laraiot.mqtt.testing.command_timeout'))
+        ->toBe(12)
         ->and(config('laraiot.websocket.health.cache_ttl'))
         ->toBe(5)
         ->and(config('laraiot.websocket.health.timeout'))
@@ -53,7 +57,13 @@ it('backfills MQTT health defaults for an older published config', function () {
         ->and(config('laraiot.mqtt.health.cache_key'))
         ->toBe('laraiot:mqtt:health')
         ->and(config('laraiot.mqtt.health.stale_after'))
-        ->toBe(20);
+        ->toBe(20)
+        ->and(config('laraiot.mqtt.testing.state_timeout'))
+        ->toBe(30)
+        ->and(config('laraiot.mqtt.testing.command_timeout'))
+        ->toBe(12)
+        ->and(config('laraiot.mqtt.testing.token_ttl'))
+        ->toBe(10);
 });
 
 it('backfills WebSocket health defaults for an older published config', function () {

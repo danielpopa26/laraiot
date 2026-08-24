@@ -33,8 +33,8 @@ final class MqttStateTopicTester
         $timeout = max(
             1,
             (int) config(
-                'laraiot.mqtt.testing.timeout',
-                10,
+                'laraiot.mqtt.testing.state_timeout',
+                30,
             ),
         );
 

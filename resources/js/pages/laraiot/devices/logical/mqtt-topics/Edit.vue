@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, FlaskConical, Radio, Save } from 'lucide-vue-next';
 import LaraIoTLayout from '../../../../../layouts/laraiot/LaraIoTLayout.vue';
@@ -11,6 +11,7 @@ const props = defineProps({
     logicalDevice: { type: Object, required: true },
     mqttTopic: { type: Object, required: true },
     stateTopics: { type: Array, default: () => [] },
+    validationTimeout: { type: Number, default: 30 },
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
@@ -29,26 +30,56 @@ const form = useForm({
 });
 
 const validationStateTopicId = ref('');
+const validationInProgress = ref(false);
+const validationRemaining = ref(0);
+let validationTimer = null;
 const usableStateTopics = computed(() => props.stateTopics.filter((topic) =>
     topic.is_enabled === true && topic.validated_at !== null && topic.id !== props.mqttTopic.id
 ));
 
 const canValidate = computed(() => {
-    if (form.isDirty || !props.mqttTopic.is_enabled) return false;
+    if (form.isDirty || !props.mqttTopic.is_enabled || validationInProgress.value) return false;
     if (props.mqttTopic.purpose === 'state') return true;
     return validationStateTopicId.value !== '';
 });
 
 const submit = () => form.put(laraiotUrl(`devices/logical/${props.logicalDevice.id}/mqtt-topics/${props.mqttTopic.id}`));
 
+const clearValidationTimer = () => {
+    if (validationTimer !== null) {
+        window.clearInterval(validationTimer);
+        validationTimer = null;
+    }
+};
+
+const startValidationTimer = () => {
+    clearValidationTimer();
+    validationInProgress.value = true;
+    validationRemaining.value = Math.max(1, Number(props.validationTimeout));
+    validationTimer = window.setInterval(() => {
+        validationRemaining.value = Math.max(0, validationRemaining.value - 1);
+    }, 1000);
+};
+
+const finishValidation = () => {
+    clearValidationTimer();
+    validationInProgress.value = false;
+};
+
 const validateTopic = () => {
     if (!canValidate.value) return;
+    startValidationTimer();
     router.post(
         laraiotUrl(`devices/logical/${props.logicalDevice.id}/mqtt-topics/${props.mqttTopic.id}/validate`),
         props.mqttTopic.purpose === 'command' ? { state_topic_id: validationStateTopicId.value } : {},
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onFinish: finishValidation,
+        },
     );
 };
+
+onBeforeUnmount(clearValidationTimer);
 </script>
 
 <template>
@@ -60,7 +91,12 @@ const validateTopic = () => {
 <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 <h2 class="font-semibold">Functional Validation</h2>
 <div v-if="mqttTopic.purpose === 'command'" class="mt-4"><select v-model="validationStateTopicId" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option value="">Select validated state topic</option><option v-for="topic in usableStateTopics" :key="topic.id" :value="topic.id">{{ topic.topic }}</option></select></div>
-<button type="button" :disabled="!canValidate" class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm disabled:opacity-50" @click="validateTopic"><FlaskConical class="size-4" />{{ mqttTopic.validated_at ? 'Validate Again' : 'Validate Topic' }}</button>
+<button type="button" :disabled="!canValidate" class="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50" @click="validateTopic"><FlaskConical class="size-4" />{{ validationInProgress ? 'Validating...' : (mqttTopic.validated_at ? 'Validate Again' : 'Validate Topic') }}</button>
+<div v-if="validationInProgress" class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+    <p v-if="mqttTopic.purpose === 'state'">Waiting for an MQTT message. Operate the equipment or request publication of its current state.</p>
+    <p v-else>Publishing the test commands and waiting for the expected MQTT state confirmations.</p>
+    <p class="mt-2 font-semibold">Time remaining: {{ validationRemaining }}s</p>
+</div>
 </section>
 </div></LaraIoTLayout>
 </template>

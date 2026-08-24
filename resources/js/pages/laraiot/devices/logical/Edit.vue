@@ -46,15 +46,11 @@ const submit = () => {
             <form class="space-y-6" @submit.prevent="submit">
                 <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div class="space-y-5">
-                        <select v-model="form.physical_device_id" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
-                            <option v-for="device in physicalDevices" :key="device.id" :value="device.id">{{ device.name }}</option>
-                        </select>
-                        <select v-model="form.device_type_id" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
-                            <option v-for="type in deviceTypes" :key="type.id" :value="type.id">{{ type.name }}</option>
-                        </select>
-                        <input v-model="form.name" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" />
-                        <input v-model="form.identifier" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 font-mono text-sm" />
-                        <input v-model="form.unit" class="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" />
+                        <div><label class="block text-sm font-medium text-slate-700">Physical Device</label><select v-model="form.physical_device_id" class="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option v-for="device in physicalDevices" :key="device.id" :value="device.id">{{ device.name }}</option></select></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Device Type</label><select v-model="form.device_type_id" class="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"><option v-for="type in deviceTypes" :key="type.id" :value="type.id">{{ type.name }}</option></select></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Name</label><input v-model="form.name" class="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" /><p v-if="form.errors.name" class="mt-1.5 text-sm text-red-600">{{ form.errors.name }}</p></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Identifier</label><input v-model="form.identifier" spellcheck="false" class="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 font-mono text-sm" /><p class="mt-1.5 text-xs text-slate-500">Stable technical identifier. Use lowercase letters, numbers, hyphens or underscores.</p><p v-if="form.errors.identifier" class="mt-1.5 text-sm text-red-600">{{ form.errors.identifier }}</p></div>
+                        <div><label class="block text-sm font-medium text-slate-700">Unit</label><input v-model="form.unit" class="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm" /></div>
                         <label class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
                             <input v-model="form.is_enabled" type="checkbox" class="size-4 rounded border-slate-300" />
                             <span class="text-sm font-medium text-slate-800">Enabled</span>

@@ -43,14 +43,15 @@ const formattedLastValue = computed(() => {
             ? JSON.stringify(value)
             : String(value);
 
-    return props.logicalDevice.unit && typeof value === 'number'
-        ? `${formatted} ${props.logicalDevice.unit}`
-        : formatted;
+    return formatted;
 });
 
 const deleteForm = useForm({});
+const canDelete = computed(() => topics.value.length === 0);
 
 const deleteDevice = () => {
+    if (!canDelete.value) return;
+
     if (window.confirm('Are you sure you want to delete this logical device?')) {
         deleteForm.delete(
             laraiotUrl(`devices/logical/${props.logicalDevice.id}`),
@@ -173,21 +174,21 @@ const payloadSummary = (topic) => {
                     </div>
 
                     <div class="p-5">
-                        <div class="text-xs font-medium uppercase tracking-wider text-slate-400">
-                            Unit
-                        </div>
-                        <p class="mt-3 text-sm font-medium text-slate-800">
-                            {{ logicalDevice.unit ?? '—' }}
-                        </p>
-                    </div>
-
-                    <div class="p-5">
                         <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
                             <Gauge class="size-4" />
                             Current Value
                         </div>
                         <p class="mt-3 text-2xl font-semibold text-[#0B1735]">
                             {{ formattedLastValue }}
+                        </p>
+                    </div>
+
+                    <div class="p-5">
+                        <div class="text-xs font-medium uppercase tracking-wider text-slate-400">
+                            Unit
+                        </div>
+                        <p class="mt-3 text-sm font-medium text-slate-800">
+                            {{ logicalDevice.unit ?? '—' }}
                         </p>
                     </div>
 
@@ -345,14 +346,20 @@ const payloadSummary = (topic) => {
                             Delete Logical Device
                         </p>
                         <p class="mt-1 text-sm text-slate-500">
-                            This action cannot be undone.
+                            <template v-if="canDelete">
+                                This action cannot be undone.
+                            </template>
+                            <template v-else>
+                                To delete this logical device, first delete all associated MQTT topics.
+                            </template>
                         </p>
+                        <p v-if="deleteForm.errors.delete" class="mt-2 text-sm text-red-600">{{ deleteForm.errors.delete }}</p>
                     </div>
 
                     <button
                         type="button"
-                        :disabled="deleteForm.processing"
-                        class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                        :disabled="!canDelete || deleteForm.processing"
+                        class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-transparent"
                         @click="deleteDevice"
                     >
                         <Trash2 class="size-4" />

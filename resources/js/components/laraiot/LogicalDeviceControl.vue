@@ -156,7 +156,7 @@ const waitForConfirmation = (command) => {
     const timeout = Math.max(
         1,
         Number(
-            props.device.control?.confirmation_timeout ?? 10,
+            props.device.control?.confirmation_timeout ?? 12,
         ),
     );
 
@@ -257,7 +257,10 @@ onBeforeUnmount(clearTimers);
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <div class="min-w-24 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                <div
+                    v-if="!hasCommandTopic"
+                    class="min-w-24 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                >
                     <div class="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                         <Gauge class="size-3.5" />
                         Current value

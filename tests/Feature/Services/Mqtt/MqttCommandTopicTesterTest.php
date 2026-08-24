@@ -10,7 +10,7 @@ use PhpMqtt\Client\ConnectionSettings;
 use PhpMqtt\Client\Contracts\MqttClient as MqttClientContract;
 
 beforeEach(function () {
-    config()->set('laraiot.mqtt.testing.timeout', 2);
+    config()->set('laraiot.mqtt.testing.command_timeout', 2);
     config()->set('laraiot.mqtt.testing.client_id_prefix', 'laraiot-test');
 });
 

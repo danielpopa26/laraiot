@@ -15,7 +15,7 @@ return new class extends Migration
 
             $table->foreignId('logical_device_id')
                 ->constrained('laraiot_logical_devices')
-                ->cascadeOnDelete();
+                ->restrictOnDelete();
 
             $table->string('purpose');
             $table->string('topic');

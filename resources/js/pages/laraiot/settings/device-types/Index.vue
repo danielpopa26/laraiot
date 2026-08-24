@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Pencil, Plus, Tags } from 'lucide-vue-next';
+import { Pencil, Plus, Tags, Trash2 } from 'lucide-vue-next';
 import LaraIoTLayout from '../../../../layouts/laraiot/LaraIoTLayout.vue';
 import StatusBadge from '../../../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../../../composables/laraiot/useLaraIoTUrl.js';
@@ -15,6 +15,16 @@ const toggleEnabled = (deviceType) => {
         description: deviceType.description ?? '',
         is_enabled: !deviceType.is_enabled,
     }, { preserveScroll: true });
+};
+
+const deleteDeviceType = (deviceType) => {
+    if ((deviceType.logical_devices_count ?? 0) > 0) return;
+    if (!window.confirm(`Delete device type "${deviceType.name}"?`)) return;
+
+    router.delete(
+        laraiotUrl(`settings/device-types/${deviceType.id}`),
+        { preserveScroll: true },
+    );
 };
 </script>
 
@@ -36,7 +46,7 @@ const toggleEnabled = (deviceType) => {
                     <td class="px-5 py-4"><code class="text-xs">{{ t.identifier }}</code></td>
                     <td class="px-5 py-4"><StatusBadge :label="`${t.logical_devices_count ?? 0} configured`" :status="(t.logical_devices_count ?? 0) ? 'info' : 'neutral'" /></td>
                     <td class="px-5 py-4"><StatusBadge :label="t.is_enabled ? 'Enabled' : 'Disabled'" :status="t.is_enabled ? 'success' : 'neutral'" /></td>
-                    <td class="px-5 py-4 text-right"><div class="flex justify-end gap-2"><button class="rounded-lg border px-3 py-2 text-xs" @click="toggleEnabled(t)">{{ t.is_enabled ? 'Disable' : 'Enable' }}</button><Link :href="laraiotUrl(`settings/device-types/${t.id}/edit`)" class="flex size-9 items-center justify-center rounded-lg hover:bg-slate-100"><Pencil class="size-4" /></Link></div></td>
+                    <td class="px-5 py-4 text-right"><div class="flex justify-end gap-2"><button class="rounded-lg border px-3 py-2 text-xs" @click="toggleEnabled(t)">{{ t.is_enabled ? 'Disable' : 'Enable' }}</button><Link :href="laraiotUrl(`settings/device-types/${t.id}/edit`)" class="flex size-9 items-center justify-center rounded-lg hover:bg-slate-100" aria-label="Edit device type"><Pencil class="size-4" /></Link><button type="button" :disabled="(t.logical_devices_count ?? 0) > 0" :title="(t.logical_devices_count ?? 0) > 0 ? 'Delete all associated logical devices before deleting this device type.' : 'Delete device type'" class="flex size-9 items-center justify-center rounded-lg text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent" aria-label="Delete device type" @click="deleteDeviceType(t)"><Trash2 class="size-4" /></button></div></td>
                 </tr>
             </tbody>
         </table>

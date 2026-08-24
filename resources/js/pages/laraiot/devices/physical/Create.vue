@@ -64,6 +64,7 @@ const submit = () => {
                         <div>
                             <label class="block text-sm font-medium text-slate-700">Identifier <span class="text-red-500">*</span></label>
                             <input v-model="form.identifier" type="text" spellcheck="false" class="mt-2 block w-full rounded-lg border border-slate-300 px-3 py-2.5 font-mono text-sm" />
+                            <p class="mt-1.5 text-xs text-slate-500">Stable technical identifier. Use lowercase letters, numbers, hyphens or underscores.</p>
                             <p v-if="form.errors.identifier" class="mt-1.5 text-sm text-red-600">{{ form.errors.identifier }}</p>
                         </div>
                     </div>
