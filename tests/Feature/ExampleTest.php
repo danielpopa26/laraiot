@@ -28,8 +28,14 @@ it('merges the package configuration', function () {
         ->and(config('laraiot.mqtt.port'))->toBe(1883)
         ->and(config('laraiot.mqtt.health.stale_after'))
         ->toBe(20)
+        ->and(config('laraiot.websocket.health.cache_ttl'))
+        ->toBe(5)
+        ->and(config('laraiot.websocket.health.timeout'))
+        ->toBe(1)
         ->and($packageConfig['mqtt']['health']['stale_after'])
-        ->toBe(20);
+        ->toBe(20)
+        ->and($packageConfig['websocket']['health']['cache_ttl'])
+        ->toBe(5);
 });
 
 it('backfills MQTT health defaults for an older published config', function () {
@@ -48,6 +54,23 @@ it('backfills MQTT health defaults for an older published config', function () {
         ->toBe('laraiot:mqtt:health')
         ->and(config('laraiot.mqtt.health.stale_after'))
         ->toBe(20);
+});
+
+it('backfills WebSocket health defaults for an older published config', function () {
+    config()->set('laraiot.websocket', [
+        'connection' => 'reverb',
+    ]);
+
+    (new LaraIoTServiceProvider($this->app))->register();
+
+    expect(config('laraiot.websocket.connection'))
+        ->toBe('reverb')
+        ->and(config('laraiot.websocket.health.cache_key'))
+        ->toBe('laraiot:websocket:health')
+        ->and(config('laraiot.websocket.health.cache_ttl'))
+        ->toBe(5)
+        ->and(config('laraiot.websocket.health.reconnect_interval'))
+        ->toBe(3);
 });
 
 it('registers the package publish groups', function () {

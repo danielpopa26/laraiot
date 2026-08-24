@@ -6,6 +6,7 @@ namespace Danpopa\LaraIoT\Http\Controllers\Ui;
 
 use Danpopa\LaraIoT\Http\Requests\Ui\ApplicationSettingsRequest;
 use Danpopa\LaraIoT\Models\ApplicationSetting;
+use Danpopa\LaraIoT\Support\Reverb\ReverbHealthMonitor;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
@@ -14,16 +15,19 @@ use Inertia\Response;
 
 final class ApplicationSettingsController extends Controller
 {
-    public function edit(): Response
-    {
+    public function edit(
+        ReverbHealthMonitor $reverbHealthMonitor,
+    ): Response {
         $settings = ApplicationSetting::current();
 
         return Inertia::render(
             'laraiot/settings/Application',
             [
                 'settings' => $settings,
-                'timezones' =>
-                    DateTimeZone::listIdentifiers(),
+                'websocket' => $reverbHealthMonitor->snapshot(
+                    force: true,
+                ),
+                'timezones' => DateTimeZone::listIdentifiers(),
                 'dateFormats' => $this->formatOptions(
                     ApplicationSetting::DATE_FORMATS,
                 ),
@@ -40,10 +44,30 @@ final class ApplicationSettingsController extends Controller
 
     public function update(
         ApplicationSettingsRequest $request,
+        ReverbHealthMonitor $reverbHealthMonitor,
     ): RedirectResponse {
-        ApplicationSetting::current()->update(
-            $request->validated(),
-        );
+        $validated = $request->validated();
+        $settings = ApplicationSetting::current();
+        $enablingWebsocket = $validated['application_mode']
+            === ApplicationSetting::MODE_WEBSOCKET
+            && $settings->application_mode
+                !== ApplicationSetting::MODE_WEBSOCKET;
+
+        if ($enablingWebsocket) {
+            $websocket = $reverbHealthMonitor->snapshot(
+                force: true,
+            );
+
+            if (($websocket['selectable'] ?? false) !== true) {
+                return back()
+                    ->withErrors([
+                        'application_mode' => 'WebSocket mode cannot be enabled because the Laravel Reverb server is not live.',
+                    ])
+                    ->withInput();
+            }
+        }
+
+        $settings->update($validated);
 
         return back()->with(
             'laraiot_message',

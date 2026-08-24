@@ -11,8 +11,11 @@ import '../../../css/laraiot.css';
 
 import AppSidebar from '../../components/laraiot/AppSidebar.vue';
 import AppTopbar from '../../components/laraiot/AppTopbar.vue';
+import { useLaraIoTWebSocketHealth } from '../../composables/laraiot/useLaraIoTWebSocketHealth.js';
 
 const sidebarOpen = ref(false);
+
+useLaraIoTWebSocketHealth();
 </script>
 
 <template>

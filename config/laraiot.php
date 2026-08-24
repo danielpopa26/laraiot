@@ -241,6 +241,39 @@ return [
             'LARAIOT_WEBSOCKET_CHANNEL_PREFIX',
             'laraiot',
         ),
+
+        /*
+        |------------------------------------------------------------------
+        | Reverb Runtime Health
+        |------------------------------------------------------------------
+        |
+        | LaraIoT confirms a Pusher-compatible WebSocket upgrade before the
+        | WebSocket communication mode may be selected. Results are cached
+        | briefly so normal UI requests do not repeatedly open sockets.
+        |
+        */
+
+        'health' => [
+            'cache_key' => env(
+                'LARAIOT_WEBSOCKET_HEALTH_CACHE_KEY',
+                'laraiot:websocket:health',
+            ),
+
+            'cache_ttl' => env(
+                'LARAIOT_WEBSOCKET_HEALTH_CACHE_TTL',
+                5,
+            ),
+
+            'timeout' => env(
+                'LARAIOT_WEBSOCKET_HEALTH_TIMEOUT',
+                1,
+            ),
+
+            'reconnect_interval' => env(
+                'LARAIOT_WEBSOCKET_RECONNECT_INTERVAL',
+                3,
+            ),
+        ],
     ],
 
 ];

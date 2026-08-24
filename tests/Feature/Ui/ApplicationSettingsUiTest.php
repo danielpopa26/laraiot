@@ -3,7 +3,70 @@
 declare(strict_types=1);
 
 use Danpopa\LaraIoT\Models\ApplicationSetting;
+use Danpopa\LaraIoT\Support\Reverb\ReverbHealthMonitor;
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository as CacheRepository;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Inertia\Testing\AssertableInertia as Assert;
+
+beforeEach(function () {
+    config()->set(
+        'laraiot.websocket.connection',
+        'reverb',
+    );
+    config()->set(
+        'broadcasting.default',
+        'reverb',
+    );
+    config()->set(
+        'broadcasting.connections.reverb',
+        [
+            'driver' => 'reverb',
+            'key' => 'laraiot-test-key',
+        ],
+    );
+    config()->set(
+        'reverb.default',
+        'reverb',
+    );
+    config()->set(
+        'reverb.servers.reverb',
+        [
+            'host' => '0.0.0.0',
+            'port' => 8080,
+            'hostname' => 'localhost',
+            'options' => [
+                'tls' => [],
+            ],
+        ],
+    );
+    config()->set(
+        'reverb.apps.apps',
+        [
+            [
+                'key' => 'laraiot-test-key',
+                'options' => [
+                    'host' => '127.0.0.1',
+                    'port' => 8080,
+                    'scheme' => 'http',
+                ],
+            ],
+        ],
+    );
+
+    $this->bindReverbHealth = function (bool $live): void {
+        $this->app->instance(
+            ReverbHealthMonitor::class,
+            new ReverbHealthMonitor(
+                new CacheRepository(new ArrayStore),
+                app(ConfigRepository::class),
+                static fn (array $server): bool => $live,
+            ),
+        );
+    };
+
+    ($this->bindReverbHealth)(true);
+});
 
 it('renders all application settings options', function () {
     $this
@@ -23,6 +86,9 @@ it('renders all application settings options', function () {
                     'settings.polling_interval',
                     10,
                 )
+                ->where('websocket.status', 'live')
+                ->where('websocket.selectable', true)
+                ->where('laraiot.websocket.status', 'live')
                 ->has('timezones')
                 ->has('dateFormats', 5)
                 ->has('timeFormats', 4)
@@ -35,6 +101,25 @@ it('renders all application settings options', function () {
                     ApplicationSetting::MAX_POLLING_INTERVAL,
                 ),
         );
+});
+
+it('does not enable websocket mode while Reverb is offline', function () {
+    ($this->bindReverbHealth)(false);
+
+    $this->put(
+        route('laraiot.settings.update'),
+        [
+            'application_mode' => 'websocket',
+            'polling_interval' => 10,
+            'timezone' => 'UTC',
+            'date_format' => 'd M Y',
+            'time_format' => 'H:i:s',
+        ],
+    )
+        ->assertSessionHasErrors('application_mode');
+
+    expect(ApplicationSetting::current()->application_mode)
+        ->toBe(ApplicationSetting::MODE_POLLING);
 });
 
 it('updates application settings through the UI endpoint', function () {

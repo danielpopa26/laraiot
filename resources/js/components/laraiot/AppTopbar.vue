@@ -11,15 +11,41 @@ import {
 } from 'lucide-vue-next';
 
 import { useLaraIoTPolling } from '../../composables/laraiot/useLaraIoTPolling.js';
+import { websocketConnectionStatus } from '../../composables/laraiot/useLaraIoTWebSocketHealth.js';
 
 const emit = defineEmits(['toggle-sidebar']);
 const page = usePage();
 
 const laraiot = computed(() => page.props.laraiot ?? {});
 
-const mode = computed(() =>
-    laraiot.value?.mode === 'websocket' ? 'websocket' : 'polling',
+const requestedMode = computed(() =>
+    laraiot.value?.requestedMode === 'websocket'
+        ? 'websocket'
+        : 'polling',
 );
+
+const websocketRuntimeStatus = computed(() => {
+    if (requestedMode.value !== 'websocket') {
+        return 'polling';
+    }
+
+    if (laraiot.value?.websocket?.live !== true) {
+        return 'fallback';
+    }
+
+    if (websocketConnectionStatus.value === 'connected') {
+        return 'live';
+    }
+
+    if (
+        websocketConnectionStatus.value === 'idle'
+        || websocketConnectionStatus.value === 'connecting'
+    ) {
+        return 'connecting';
+    }
+
+    return 'fallback';
+});
 
 const mqttConnected = computed(() => {
     const value = laraiot.value?.mqtt?.connected;
@@ -31,9 +57,33 @@ const mqttConnected = computed(() => {
     return null;
 });
 
-const modeLabel = computed(() =>
-    mode.value === 'websocket' ? 'WebSocket' : 'Polling',
-);
+const modeLabel = computed(() => ({
+    polling: 'Polling',
+    live: 'WebSocket Live',
+    connecting: 'WebSocket Connecting',
+    fallback: 'Polling Fallback',
+}[websocketRuntimeStatus.value]));
+
+const modeDetail = computed(() => {
+    if (websocketRuntimeStatus.value === 'fallback') {
+        if (laraiot.value?.websocket?.live === true) {
+            return 'The browser WebSocket connection is unavailable. LaraIoT is using polling until it recovers.';
+        }
+
+        return laraiot.value?.websocket?.detail
+            ?? 'The WebSocket connection is unavailable. LaraIoT is using polling until it recovers.';
+    }
+
+    if (websocketRuntimeStatus.value === 'connecting') {
+        return 'Connecting to the Laravel Reverb WebSocket server.';
+    }
+
+    if (websocketRuntimeStatus.value === 'live') {
+        return 'Laravel Reverb is live and the browser connection is established.';
+    }
+
+    return 'Periodic frontend updates are enabled.';
+});
 
 const mqttLabel = computed(() => {
     const reportedLabel = laraiot.value?.mqtt?.label;
@@ -134,15 +184,18 @@ const pageTitle = computed(() => {
         <div class="flex shrink-0 items-center gap-2 sm:gap-3">
             <div
                 class="flex h-10 items-center gap-2 rounded-full border px-3 text-xs font-semibold"
-                :class="
-                    mode === 'websocket'
-                        ? 'border-violet-200 bg-violet-50 text-[#7C3AED]'
-                        : 'border-blue-200 bg-blue-50 text-[#2583FF]'
-                "
+                :title="modeDetail"
+                :class="{
+                    'border-blue-200 bg-blue-50 text-[#2583FF]': websocketRuntimeStatus === 'polling',
+                    'border-violet-200 bg-violet-50 text-[#7C3AED]': websocketRuntimeStatus === 'connecting',
+                    'border-emerald-200 bg-emerald-50 text-[#059669]': websocketRuntimeStatus === 'live',
+                    'border-amber-200 bg-amber-50 text-[#D97706]': websocketRuntimeStatus === 'fallback',
+                }"
                 role="status"
+                :aria-label="modeLabel"
             >
                 <Zap
-                    v-if="mode === 'websocket'"
+                    v-if="websocketRuntimeStatus === 'live' || websocketRuntimeStatus === 'connecting'"
                     class="size-4"
                     :stroke-width="2"
                 />

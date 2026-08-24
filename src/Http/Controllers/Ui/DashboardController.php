@@ -10,6 +10,7 @@ use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
 use Danpopa\LaraIoT\Services\MqttHealthMonitor;
+use Danpopa\LaraIoT\Support\Reverb\ReverbHealthMonitor;
 use Danpopa\LaraIoT\Support\Ui\LogicalDevicePresenter;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
@@ -20,8 +21,15 @@ final class DashboardController extends Controller
     public function __invoke(
         LogicalDevicePresenter $logicalDevicePresenter,
         MqttHealthMonitor $mqttHealthMonitor,
+        ReverbHealthMonitor $reverbHealthMonitor,
     ): Response {
         $settings = ApplicationSetting::current();
+        $websocket = $reverbHealthMonitor->snapshot();
+        $requestedMode = $settings->application_mode;
+        $mode = $requestedMode === ApplicationSetting::MODE_WEBSOCKET
+            && ($websocket['live'] ?? false) === true
+                ? ApplicationSetting::MODE_WEBSOCKET
+                : ApplicationSetting::MODE_POLLING;
 
         $physicalDevices = PhysicalDevice::query()
             ->with([
@@ -94,7 +102,12 @@ final class DashboardController extends Controller
                 'physicalDevices' => $physicalDevices,
                 'recentActivity' => $recentActivity,
                 'mqtt' => $mqttHealthMonitor->snapshot(),
-                'mode' => $settings->application_mode,
+                'websocket' => $websocket,
+                'mode' => $mode,
+                'requestedMode' => $requestedMode,
+                'fallbackActive' => $requestedMode
+                    === ApplicationSetting::MODE_WEBSOCKET
+                    && $mode === ApplicationSetting::MODE_POLLING,
             ],
         );
     }

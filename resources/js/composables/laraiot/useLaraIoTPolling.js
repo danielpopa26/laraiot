@@ -1,6 +1,8 @@
 import { onBeforeUnmount, onMounted } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 
+import { websocketNeedsPollingFallback } from './useLaraIoTWebSocketHealth.js';
+
 export function useLaraIoTPolling(only = [], enabled = true) {
     const page = usePage();
     let timer = null;
@@ -14,7 +16,12 @@ export function useLaraIoTPolling(only = [], enabled = true) {
             return;
         }
 
-        if (page.props.laraiot?.mode !== 'polling') {
+        if (
+            page.props.laraiot?.mode !== 'polling'
+            && !websocketNeedsPollingFallback(
+                page.props.laraiot ?? {},
+            )
+        ) {
             return;
         }
 

@@ -17,6 +17,7 @@ use Danpopa\LaraIoT\Services\MqttConnectionService;
 use Danpopa\LaraIoT\Services\MqttHealthMonitor;
 use Danpopa\LaraIoT\Services\MqttPublisher;
 use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
+use Danpopa\LaraIoT\Support\Reverb\ReverbHealthMonitor;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
@@ -34,6 +35,7 @@ class LaraIoTServiceProvider extends ServiceProvider
         );
 
         $this->mergeMqttHealthConfig($configPath);
+        $this->mergeWebsocketHealthConfig($configPath);
 
         $this->app->singleton(LaraIoT::class);
 
@@ -47,6 +49,8 @@ class LaraIoTServiceProvider extends ServiceProvider
         );
 
         $this->app->singleton(MqttHealthMonitor::class);
+
+        $this->app->singleton(ReverbHealthMonitor::class);
 
         $this->app->singleton(MqttPublisher::class);
 
@@ -72,6 +76,29 @@ class LaraIoTServiceProvider extends ServiceProvider
 
         $this->app['config']->set(
             'laraiot.mqtt.health',
+            array_replace(
+                is_array($healthDefaults) ? $healthDefaults : [],
+                is_array($configured) ? $configured : [],
+            ),
+        );
+    }
+
+    private function mergeWebsocketHealthConfig(string $configPath): void
+    {
+        $packageConfig = require $configPath;
+        $websocketDefaults = is_array($packageConfig)
+            ? ($packageConfig['websocket'] ?? [])
+            : [];
+        $healthDefaults = is_array($websocketDefaults)
+            ? ($websocketDefaults['health'] ?? [])
+            : [];
+        $configured = $this->app['config']->get(
+            'laraiot.websocket.health',
+            [],
+        );
+
+        $this->app['config']->set(
+            'laraiot.websocket.health',
             array_replace(
                 is_array($healthDefaults) ? $healthDefaults : [],
                 is_array($configured) ? $configured : [],
@@ -179,7 +206,7 @@ class LaraIoTServiceProvider extends ServiceProvider
         Inertia::share(
             'laraiot',
             function (): array {
-                $mode = (string) config(
+                $requestedMode = (string) config(
                     'laraiot.mode',
                     ApplicationSetting::MODE_POLLING,
                 );
@@ -195,7 +222,7 @@ class LaraIoTServiceProvider extends ServiceProvider
                 try {
                     $settings = ApplicationSetting::current();
 
-                    $mode = $settings->application_mode;
+                    $requestedMode = $settings->application_mode;
 
                     $pollingInterval = $settings->polling_interval;
                 } catch (Throwable) {
@@ -214,10 +241,25 @@ class LaraIoTServiceProvider extends ServiceProvider
                     '/',
                 );
 
+                $websocket = $this->app
+                    ->make(ReverbHealthMonitor::class)
+                    ->snapshot();
+                $websocketLive = ($websocket['live'] ?? false) === true;
+                $mode = $requestedMode === ApplicationSetting::MODE_WEBSOCKET
+                    && $websocketLive
+                        ? ApplicationSetting::MODE_WEBSOCKET
+                        : ApplicationSetting::MODE_POLLING;
+                $fallbackActive = $requestedMode
+                    === ApplicationSetting::MODE_WEBSOCKET
+                    && $mode === ApplicationSetting::MODE_POLLING;
+
                 return [
                     'baseUrl' => '/'.$prefix,
                     'mode' => $mode,
+                    'requestedMode' => $requestedMode,
+                    'fallbackActive' => $fallbackActive,
                     'pollingInterval' => $pollingInterval,
+                    'websocket' => $websocket,
                     'mqtt' => $this->app
                         ->make(MqttHealthMonitor::class)
                         ->snapshot(),

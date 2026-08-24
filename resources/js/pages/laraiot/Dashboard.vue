@@ -17,6 +17,7 @@ import StatCard from '../../components/laraiot/StatCard.vue';
 import StatusBadge from '../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
 import { useLaraIoTPolling } from '../../composables/laraiot/useLaraIoTPolling.js';
+import { websocketConnectionStatus } from '../../composables/laraiot/useLaraIoTWebSocketHealth.js';
 
 const props = defineProps({
     statistics: {
@@ -45,6 +46,18 @@ const props = defineProps({
         type: String,
         default: 'polling',
     },
+    requestedMode: {
+        type: String,
+        default: 'polling',
+    },
+    fallbackActive: {
+        type: Boolean,
+        default: false,
+    },
+    websocket: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
@@ -54,8 +67,69 @@ useLaraIoTPolling([
     'physicalDevices',
     'recentActivity',
     'mqtt',
+    'websocket',
+    'mode',
+    'requestedMode',
+    'fallbackActive',
     'laraiot',
 ]);
+
+const communicationStatus = computed(() => {
+    if (props.requestedMode !== 'websocket') {
+        return 'polling';
+    }
+
+    if (props.fallbackActive || props.websocket.live !== true) {
+        return 'fallback';
+    }
+
+    if (websocketConnectionStatus.value === 'connected') {
+        return 'live';
+    }
+
+    if (
+        websocketConnectionStatus.value === 'idle'
+        || websocketConnectionStatus.value === 'connecting'
+    ) {
+        return 'connecting';
+    }
+
+    return 'fallback';
+});
+
+const communicationPresentation = computed(() => ({
+    polling: {
+        label: 'Polling',
+        description: 'Periodic frontend updates',
+        icon: RefreshCw,
+        tone: 'slate',
+        badge: 'info',
+    },
+    live: {
+        label: 'WebSocket Live',
+        description: 'Reverb and browser connection are live',
+        icon: Zap,
+        tone: 'purple',
+        badge: 'success',
+    },
+    connecting: {
+        label: 'WebSocket Connecting',
+        description: 'Establishing the browser connection',
+        icon: Zap,
+        tone: 'purple',
+        badge: 'info',
+    },
+    fallback: {
+        label: 'Polling Fallback',
+        description: props.websocket.live === true
+            ? 'The browser WebSocket connection is unavailable; polling remains active'
+            : props.websocket.detail
+                ?? 'WebSocket is unavailable; polling remains active',
+        icon: RefreshCw,
+        tone: 'red',
+        badge: 'warning',
+    },
+}[communicationStatus.value]));
 
 const mqttLabel = computed(() => {
     if (
@@ -119,8 +193,8 @@ const activityStatus = (status) => {
                 </div>
 
                 <StatusBadge
-                    :label="mode === 'websocket' ? 'WebSocket' : 'Polling'"
-                    status="info"
+                    :label="communicationPresentation.label"
+                    :status="communicationPresentation.badge"
                     size="md"
                 />
             </section>
@@ -157,10 +231,10 @@ const activityStatus = (status) => {
 
                 <StatCard
                     title="Communication Mode"
-                    :value="mode === 'websocket' ? 'WebSocket' : 'Polling'"
-                    :description="mode === 'websocket' ? 'Live frontend updates' : 'Periodic frontend updates'"
-                    :icon="mode === 'websocket' ? Zap : RefreshCw"
-                    :tone="mode === 'websocket' ? 'purple' : 'slate'"
+                    :value="communicationPresentation.label"
+                    :description="communicationPresentation.description"
+                    :icon="communicationPresentation.icon"
+                    :tone="communicationPresentation.tone"
                 />
             </section>
 

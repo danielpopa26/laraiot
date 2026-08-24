@@ -1,6 +1,14 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
-import { Clock3, Radio, RefreshCw, Save, Settings } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import {
+    Clock3,
+    Radio,
+    RefreshCw,
+    RotateCw,
+    Save,
+    Settings,
+} from 'lucide-vue-next';
 
 import LaraIoTLayout from '../../../layouts/laraiot/LaraIoTLayout.vue';
 import StatusBadge from '../../../components/laraiot/StatusBadge.vue';
@@ -12,9 +20,39 @@ const props = defineProps({
     dateFormats: { type: Array, default: () => [] },
     timeFormats: { type: Array, default: () => [] },
     pollingIntervalLimits: { type: Object, default: () => ({ min: 1, max: 3600 }) },
+    websocket: { type: Object, default: () => ({}) },
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
+const page = usePage();
+
+const websocketHealth = computed(() =>
+    page.props.laraiot?.websocket ?? props.websocket,
+);
+
+const websocketSelectable = computed(() =>
+    websocketHealth.value?.selectable === true,
+);
+
+const websocketStatus = computed(() => {
+    if (websocketHealth.value?.status === 'live') {
+        return 'success';
+    }
+
+    if (websocketHealth.value?.status === 'offline') {
+        return 'danger';
+    }
+
+    return 'warning';
+});
+
+const recheckWebsocket = () => {
+    router.reload({
+        only: ['websocket', 'laraiot'],
+        preserveScroll: true,
+        preserveState: true,
+    });
+};
 
 const form = useForm({
     application_mode: props.settings.application_mode ?? 'polling',
@@ -49,11 +87,60 @@ const submit = () => {
                             <RefreshCw class="size-5" />
                             <div><div class="flex gap-2"><span class="font-semibold">Polling</span><StatusBadge v-if="settings.application_mode === 'polling'" label="Current" status="success" /></div></div>
                         </label>
-                        <label class="flex cursor-pointer gap-4 rounded-xl border p-5" :class="form.application_mode === 'websocket' ? 'border-slate-900 bg-slate-50' : 'border-slate-200'">
-                            <input v-model="form.application_mode" type="radio" value="websocket" class="sr-only" />
-                            <Radio class="size-5" />
-                            <div><div class="flex gap-2"><span class="font-semibold">WebSocket</span><StatusBadge v-if="settings.application_mode === 'websocket'" label="Current" status="success" /></div></div>
+                        <label
+                            class="flex gap-4 rounded-xl border p-5 transition-colors"
+                            :class="[
+                                form.application_mode === 'websocket' ? 'border-slate-900 bg-slate-50' : 'border-slate-200',
+                                websocketSelectable ? 'cursor-pointer' : 'cursor-not-allowed opacity-70',
+                            ]"
+                        >
+                            <input
+                                v-model="form.application_mode"
+                                type="radio"
+                                value="websocket"
+                                class="sr-only"
+                                :disabled="!websocketSelectable"
+                            />
+                            <Radio class="mt-0.5 size-5 shrink-0" />
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-semibold">WebSocket</span>
+                                    <StatusBadge
+                                        v-if="settings.application_mode === 'websocket'"
+                                        label="Requested"
+                                        status="info"
+                                    />
+                                    <StatusBadge
+                                        :label="websocketHealth.label ?? 'Not Configured'"
+                                        :status="websocketStatus"
+                                    />
+                                </div>
+                                <p class="mt-2 text-xs leading-5 text-slate-500">
+                                    {{ websocketHealth.detail ?? 'Laravel Reverb health could not be determined.' }}
+                                </p>
+                            </div>
                         </label>
+                    </div>
+
+                    <div class="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p
+                            v-if="form.errors.application_mode"
+                            class="text-sm font-medium text-red-600"
+                        >
+                            {{ form.errors.application_mode }}
+                        </p>
+                        <p v-else class="text-xs text-slate-500">
+                            WebSocket mode becomes available only after LaraIoT confirms a live Reverb server.
+                        </p>
+
+                        <button
+                            type="button"
+                            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                            @click="recheckWebsocket"
+                        >
+                            <RotateCw class="size-4" />
+                            Recheck server
+                        </button>
                     </div>
                 </section>
 
