@@ -167,7 +167,13 @@ const activityStatus = (status) => {
                                 {{ activity.message }}
                             </p>
                             <p
-                                v-if="activity.device"
+                                v-if="activity.description"
+                                class="mt-1 text-xs text-slate-500"
+                            >
+                                {{ activity.description }}
+                            </p>
+                            <p
+                                v-else-if="activity.device"
                                 class="mt-1 text-xs text-slate-500"
                             >
                                 {{ activity.device }}

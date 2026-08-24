@@ -16,8 +16,7 @@ it('renders the LaraIoT dashboard with real summary values', function () {
 
     ActivityLog::query()->create([
         'type' => 'state',
-        'logical_device_id' =>
-            $tree['logicalDevice']->getKey(),
+        'logical_device_id' => $tree['logicalDevice']->getKey(),
         'mqtt_topic_id' => $topic->getKey(),
         'title' => 'State updated',
         'description' => 'Test state update.',
@@ -57,6 +56,10 @@ it('renders the LaraIoT dashboard with real summary values', function () {
                 ->where(
                     'recentActivity.0.message',
                     'State updated',
+                )
+                ->where(
+                    'recentActivity.0.description',
+                    'Test state update.',
                 )
                 ->where(
                     'laraiot.baseUrl',

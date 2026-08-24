@@ -51,10 +51,8 @@ it('creates and updates a logical device', function () {
     $this->post(
         route('laraiot.logical-devices.store'),
         [
-            'physical_device_id' =>
-                $tree['physicalDevice']->getKey(),
-            'device_type_id' =>
-                $tree['deviceType']->getKey(),
+            'physical_device_id' => $tree['physicalDevice']->getKey(),
+            'device_type_id' => $tree['deviceType']->getKey(),
             'identifier' => 'humidity-sensor',
             'name' => 'Humidity Sensor',
             'unit' => '%',
@@ -72,10 +70,8 @@ it('creates and updates a logical device', function () {
             $logicalDevice,
         ),
         [
-            'physical_device_id' =>
-                $tree['physicalDevice']->getKey(),
-            'device_type_id' =>
-                $tree['deviceType']->getKey(),
+            'physical_device_id' => $tree['physicalDevice']->getKey(),
+            'device_type_id' => $tree['deviceType']->getKey(),
             'identifier' => 'humidity-sensor',
             'name' => 'Soil Humidity',
             'unit' => '%',
@@ -98,6 +94,10 @@ it('creates and updates a logical device', function () {
 it('renders a logical device together with its MQTT topics', function () {
     $tree = UiTestData::deviceTree();
 
+    $tree['logicalDevice']->forceFill([
+        'last_value' => 42.5,
+    ])->saveQuietly();
+
     UiTestData::stateTopic(
         $tree['logicalDevice'],
     );
@@ -119,6 +119,10 @@ it('renders a logical device together with its MQTT topics', function () {
                 ->where(
                     'logicalDevice.id',
                     $tree['logicalDevice']->getKey(),
+                )
+                ->where(
+                    'logicalDevice.last_value',
+                    42.5,
                 )
                 ->has('mqttTopics', 1),
         );

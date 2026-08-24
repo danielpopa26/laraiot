@@ -28,6 +28,7 @@ final class DashboardController extends Controller
                 fn (ActivityLog $activity): array => [
                     'id' => $activity->getKey(),
                     'message' => $activity->title,
+                    'description' => $activity->description,
                     'device' => $activity->logicalDevice?->name,
                     'status' => $this->activityStatus(
                         $activity->type,
@@ -48,12 +49,9 @@ final class DashboardController extends Controller
             'laraiot/Dashboard',
             [
                 'statistics' => [
-                    'physicalDevices' =>
-                        PhysicalDevice::query()->count(),
-                    'logicalDevices' =>
-                        LogicalDevice::query()->count(),
-                    'mqttTopics' =>
-                        MqttTopic::query()->count(),
+                    'physicalDevices' => PhysicalDevice::query()->count(),
+                    'logicalDevices' => LogicalDevice::query()->count(),
+                    'mqttTopics' => MqttTopic::query()->count(),
                 ],
                 'recentActivity' => $recentActivity,
                 'mqtt' => [

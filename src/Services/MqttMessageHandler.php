@@ -22,7 +22,7 @@ final class MqttMessageHandler
     public function handle(string $topic, string $payload): int
     {
         $mqttTopics = MqttTopic::query()
-            ->with('logicalDevice:id,name,unit')
+            ->with('logicalDevice:id,name,unit,last_value')
             ->where('topic', $topic)
             ->where('purpose', 'state')
             ->where('is_enabled', true)
@@ -58,6 +58,8 @@ final class MqttMessageHandler
             $stateChanged = $isFirstValue
                 || $mqttTopic->last_value !== $normalizedValue;
 
+            $logicalDevice = $mqttTopic->logicalDevice;
+
             $mqttTopic->update([
                 'last_payload' => $payload,
                 'last_value' => $normalizedValue,
@@ -65,11 +67,15 @@ final class MqttMessageHandler
                 'last_error' => null,
             ]);
 
+            if ($logicalDevice->last_value !== $normalizedValue) {
+                $logicalDevice->forceFill([
+                    'last_value' => $normalizedValue,
+                ])->saveQuietly();
+            }
+
             if (! $stateChanged) {
                 return;
             }
-
-            $logicalDevice = $mqttTopic->logicalDevice;
 
             $this->recordActivity([
                 'type' => 'state',

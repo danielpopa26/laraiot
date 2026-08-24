@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, Boxes, Cpu, Fingerprint, Pencil, Plus, Radio, Tag, Trash2 } from 'lucide-vue-next';
+import { ArrowLeft, Boxes, Cpu, Fingerprint, Gauge, Pencil, Plus, Radio, Tag, Trash2 } from 'lucide-vue-next';
 
 import LaraIoTLayout from '../../../../layouts/laraiot/LaraIoTLayout.vue';
 import StatusBadge from '../../../../components/laraiot/StatusBadge.vue';
@@ -19,6 +19,24 @@ const topics = computed(() =>
         ? props.mqttTopics
         : (props.logicalDevice.mqtt_topics ?? []),
 );
+
+const formattedLastValue = computed(() => {
+    const value = props.logicalDevice.last_value;
+
+    if (value === null || value === undefined || value === '') {
+        return '—';
+    }
+
+    const formatted = typeof value === 'boolean'
+        ? (value ? 'TRUE' : 'FALSE')
+        : typeof value === 'object'
+            ? JSON.stringify(value)
+            : String(value);
+
+    return props.logicalDevice.unit && typeof value === 'number'
+        ? `${formatted} ${props.logicalDevice.unit}`
+        : formatted;
+});
 
 const deleteForm = useForm({});
 
@@ -105,7 +123,7 @@ const payloadSummary = (topic) => {
             </div>
 
             <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div class="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-5">
+                <div class="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-y-0 xl:grid-cols-6">
                     <div class="p-5">
                         <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
                             <Fingerprint class="size-4" />
@@ -150,6 +168,16 @@ const payloadSummary = (topic) => {
                         </div>
                         <p class="mt-3 text-sm font-medium text-slate-800">
                             {{ logicalDevice.unit ?? '—' }}
+                        </p>
+                    </div>
+
+                    <div class="p-5">
+                        <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+                            <Gauge class="size-4" />
+                            Current Value
+                        </div>
+                        <p class="mt-3 text-2xl font-semibold text-[#0B1735]">
+                            {{ formattedLastValue }}
                         </p>
                     </div>
 

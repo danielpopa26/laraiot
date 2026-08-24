@@ -58,6 +58,7 @@ it('persists a processed MQTT message and records the first state activity', fun
     expect($handledTopics)->toBe(1)
         ->and($mqttTopic->last_payload)->toBe('ON')
         ->and($mqttTopic->last_value)->toBeTrue()
+        ->and($this->logicalDevice->fresh()->last_value)->toBeTrue()
         ->and($mqttTopic->last_received_at)->not->toBeNull()
         ->and($mqttTopic->last_error)->toBeNull()
         ->and($activity->type)->toBe('state')
@@ -214,7 +215,8 @@ it('records a new state activity when the normalized value changes', function ()
     expect($activities)->toHaveCount(2)
         ->and($activities[0]->data['normalized_value'])->toBeTrue()
         ->and($activities[1]->data['normalized_value'])->toBeFalse()
-        ->and($mqttTopic->fresh()->last_value)->toBeFalse();
+        ->and($mqttTopic->fresh()->last_value)->toBeFalse()
+        ->and($this->logicalDevice->fresh()->last_value)->toBeFalse();
 });
 
 it('does not duplicate state activity when the normalized value is unchanged', function () {
@@ -255,7 +257,75 @@ it('does not duplicate state activity when the normalized value is unchanged', f
     expect(ActivityLog::query()->where('type', 'state')->count())->toBe(1)
         ->and($mqttTopic->last_payload)->toBe($secondPayload)
         ->and($mqttTopic->last_value)->toBeTrue()
+        ->and($this->logicalDevice->fresh()->last_value)->toBeTrue()
         ->and($mqttTopic->last_received_at)->not->toBeNull();
+});
+
+it('does not duplicate numeric JSON state activity when only telemetry metadata changes', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'tele/test-device/SENSOR',
+        'payload_mapping' => [
+            'format' => 'json',
+            'value_path' => 'MS01.Humidity',
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+    ]);
+
+    $mqttTopic->markAsValidated();
+
+    $handler = $this->app->make(MqttMessageHandler::class);
+
+    $handler->handle(
+        'tele/test-device/SENSOR',
+        '{"Time":"2026-08-24T08:23:32","MS01":{"Humidity":22.2,"Raw":14670}}',
+    );
+
+    $secondPayload = '{"Time":"2026-08-24T08:23:42","MS01":{"Humidity":22.2,"Raw":14677}}';
+
+    $handler->handle(
+        'tele/test-device/SENSOR',
+        $secondPayload,
+    );
+
+    $mqttTopic->refresh();
+
+    expect(ActivityLog::query()->where('type', 'state')->count())->toBe(1)
+        ->and($mqttTopic->last_payload)->toBe($secondPayload)
+        ->and($mqttTopic->last_value)->toBe(22.2)
+        ->and($mqttTopic->last_received_at)->not->toBeNull()
+        ->and($this->logicalDevice->fresh()->last_value)->toBe(22.2);
+});
+
+it('backfills the logical device value without duplicating unchanged topic activity', function () {
+    $mqttTopic = MqttTopic::query()->create([
+        'logical_device_id' => $this->logicalDevice->getKey(),
+        'purpose' => 'state',
+        'topic' => 'test/device/backfill',
+        'payload_mapping' => [
+            'format' => 'json',
+            'value_path' => 'value',
+        ],
+        'qos' => 0,
+        'is_enabled' => true,
+        'last_payload' => '{"value":22.2}',
+        'last_value' => 22.2,
+        'last_received_at' => now()->subSecond(),
+    ]);
+
+    $mqttTopic->markAsValidated();
+
+    $this->app
+        ->make(MqttMessageHandler::class)
+        ->handle(
+            'test/device/backfill',
+            '{"value":22.2}',
+        );
+
+    expect(ActivityLog::query()->where('type', 'state')->count())->toBe(0)
+        ->and($this->logicalDevice->fresh()->last_value)->toBe(22.2);
 });
 
 it('ignores MQTT messages for unknown topics', function () {
