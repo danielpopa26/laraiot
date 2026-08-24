@@ -132,8 +132,7 @@ it('invalidates a previously validated topic after relevant configuration change
         route(
             'laraiot.mqtt-topics.update',
             [
-                'logicalDevice' =>
-                    $tree['logicalDevice'],
+                'logicalDevice' => $tree['logicalDevice'],
                 'mqttTopic' => $topic,
             ],
         ),
@@ -171,8 +170,7 @@ it('rejects a nested MQTT topic belonging to another logical device', function (
             route(
                 'laraiot.mqtt-topics.edit',
                 [
-                    'logicalDevice' =>
-                        $first['logicalDevice'],
+                    'logicalDevice' => $first['logicalDevice'],
                     'mqttTopic' => $topic,
                 ],
             ),
@@ -191,8 +189,7 @@ it('requires a state topic id before validating a command topic', function () {
         route(
             'laraiot.mqtt-topics.validate',
             [
-                'logicalDevice' =>
-                    $tree['logicalDevice'],
+                'logicalDevice' => $tree['logicalDevice'],
                 'mqttTopic' => $commandTopic,
             ],
         ),
@@ -217,8 +214,7 @@ it('rejects validation of a disabled state topic without contacting the broker',
         route(
             'laraiot.mqtt-topics.validate',
             [
-                'logicalDevice' =>
-                    $tree['logicalDevice'],
+                'logicalDevice' => $tree['logicalDevice'],
                 'mqttTopic' => $stateTopic,
             ],
         ),

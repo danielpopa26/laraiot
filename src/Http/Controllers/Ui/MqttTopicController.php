@@ -174,8 +174,7 @@ final class MqttTopicController extends Controller
         } catch (Throwable $exception) {
             return back()
                 ->withErrors([
-                    'validation' =>
-                        $exception->getMessage(),
+                    'validation' => $exception->getMessage(),
                 ]);
         }
 
@@ -183,8 +182,7 @@ final class MqttTopicController extends Controller
             'laraiot_validation',
             [
                 'success' => true,
-                'message' =>
-                    'MQTT topic validated successfully.',
+                'message' => 'MQTT topic validated successfully.',
             ],
         );
     }
@@ -215,8 +213,7 @@ final class MqttTopicController extends Controller
             'retain' => $purpose === 'command'
                 ? (bool) ($validated['retain'] ?? false)
                 : false,
-            'is_enabled' =>
-                (bool) $validated['is_enabled'],
+            'is_enabled' => (bool) $validated['is_enabled'],
         ];
     }
 
@@ -242,8 +239,7 @@ final class MqttTopicController extends Controller
         $valueMap = [];
 
         foreach (
-            (array) ($validated['value_map'] ?? [])
-            as $entry
+            (array) ($validated['value_map'] ?? []) as $entry
         ) {
             if (! is_array($entry)) {
                 continue;

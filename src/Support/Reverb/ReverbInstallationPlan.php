@@ -33,8 +33,7 @@ final class ReverbInstallationPlan
             configured: $configured,
             composerInstallRequired: ! $packageInstalled,
             configurationRequired: ! $configured,
-            dependencyResolutionMayBeRequired:
-                ($environment['dependency_resolution_may_be_required'] ?? false)
+            dependencyResolutionMayBeRequired: ($environment['dependency_resolution_may_be_required'] ?? false)
                     === true,
         );
     }
@@ -93,8 +92,7 @@ final class ReverbInstallationPlan
             'configured' => $this->configured(),
             'requires_composer_install' => $this->requiresComposerInstall(),
             'requires_configuration' => $this->requiresConfiguration(),
-            'dependency_resolution_may_be_required' =>
-                $this->dependencyResolutionMayBeRequired(),
+            'dependency_resolution_may_be_required' => $this->dependencyResolutionMayBeRequired(),
             'requires_changes' => $this->requiresChanges(),
             'package_requirement' => $this->packageRequirement(),
         ];

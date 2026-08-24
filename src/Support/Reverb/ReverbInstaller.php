@@ -142,7 +142,7 @@ PHPFILE
         } elseif (str_contains($contents, '->withRouting(')) {
             $contents = preg_replace(
                 '/->withRouting\(\s*/',
-                "->withRouting(".PHP_EOL.'        '.$channelsLine.PHP_EOL.'        ',
+                '->withRouting('.PHP_EOL.'        '.$channelsLine.PHP_EOL.'        ',
                 $contents,
                 1,
             );

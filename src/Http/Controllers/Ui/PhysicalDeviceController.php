@@ -64,8 +64,7 @@ final class PhysicalDeviceController extends Controller
             'laraiot/devices/physical/Show',
             [
                 'physicalDevice' => $physicalDevice,
-                'logicalDevices' =>
-                    $physicalDevice->logicalDevices,
+                'logicalDevices' => $physicalDevice->logicalDevices,
             ],
         );
     }
@@ -105,8 +104,7 @@ final class PhysicalDeviceController extends Controller
     ): RedirectResponse {
         if ($physicalDevice->logicalDevices()->exists()) {
             return back()->withErrors([
-                'delete' =>
-                    'This physical device contains one or more logical devices.',
+                'delete' => 'This physical device contains one or more logical devices.',
             ]);
         }
 

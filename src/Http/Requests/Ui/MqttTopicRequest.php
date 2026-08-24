@@ -35,8 +35,7 @@ final class MqttTopicRequest extends FormRequest
             ],
             'payload_format' => [
                 Rule::requiredIf(
-                    fn (): bool =>
-                        $this->input('purpose')
+                    fn (): bool => $this->input('purpose')
                             === 'state',
                 ),
                 'nullable',
@@ -47,8 +46,7 @@ final class MqttTopicRequest extends FormRequest
             ],
             'value_path' => [
                 Rule::requiredIf(
-                    fn (): bool =>
-                        $this->input('purpose')
+                    fn (): bool => $this->input('purpose')
                             === 'state'
                         && $this->input(
                             'payload_format',
@@ -74,8 +72,7 @@ final class MqttTopicRequest extends FormRequest
             ],
             'command_on' => [
                 Rule::requiredIf(
-                    fn (): bool =>
-                        $this->input('purpose')
+                    fn (): bool => $this->input('purpose')
                             === 'command',
                 ),
                 'nullable',
@@ -83,8 +80,7 @@ final class MqttTopicRequest extends FormRequest
             ],
             'command_off' => [
                 Rule::requiredIf(
-                    fn (): bool =>
-                        $this->input('purpose')
+                    fn (): bool => $this->input('purpose')
                             === 'command',
                 ),
                 'nullable',

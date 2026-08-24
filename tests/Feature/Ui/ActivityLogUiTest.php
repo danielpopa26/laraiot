@@ -12,8 +12,7 @@ it('renders and filters activity logs', function () {
 
     ActivityLog::query()->create([
         'type' => 'state',
-        'logical_device_id' =>
-            $first['logicalDevice']->getKey(),
+        'logical_device_id' => $first['logicalDevice']->getKey(),
         'title' => 'Humidity updated',
         'description' => 'Humidity is 42%.',
         'data' => [
@@ -24,8 +23,7 @@ it('renders and filters activity logs', function () {
 
     ActivityLog::query()->create([
         'type' => 'error',
-        'logical_device_id' =>
-            $second['logicalDevice']->getKey(),
+        'logical_device_id' => $second['logicalDevice']->getKey(),
         'title' => 'Payload failed',
         'description' => 'Invalid payload.',
         'data' => [
@@ -40,8 +38,7 @@ it('renders and filters activity logs', function () {
                 'laraiot.logs.index',
                 [
                     'type' => 'state',
-                    'logical_device_id' =>
-                        $first['logicalDevice']->getKey(),
+                    'logical_device_id' => $first['logicalDevice']->getKey(),
                     'search' => 'Humidity',
                 ],
             ),

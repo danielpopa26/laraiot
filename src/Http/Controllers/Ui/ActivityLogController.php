@@ -113,34 +113,30 @@ final class ActivityLogController extends Controller
                     'type' => $log->type,
                     'title' => $log->title,
                     'description' => $log->description,
-                    'logical_device' =>
-                        $log->logicalDevice
+                    'logical_device' => $log->logicalDevice
                             ? [
                                 'id' => $log
                                     ->logicalDevice
                                     ->getKey(),
-                                'name' =>
-                                    $log
-                                        ->logicalDevice
-                                        ->name,
+                                'name' => $log
+                                    ->logicalDevice
+                                    ->name,
                             ]
                             : null,
                     'topic' => $log->mqttTopic?->topic,
                     'data' => $log->data,
-                    'happened_at' =>
-                        $log->happened_at
-                            ?->toIso8601String(),
-                    'happened_at_formatted' =>
-                        $log->happened_at
-                            ?->copy()
-                            ->setTimezone(
-                                $settings->timezone,
-                            )
-                            ->format(
-                                $settings->date_format
-                                    .' '
-                                    .$settings->time_format,
-                            ),
+                    'happened_at' => $log->happened_at
+                        ?->toIso8601String(),
+                    'happened_at_formatted' => $log->happened_at
+                        ?->copy()
+                        ->setTimezone(
+                            $settings->timezone,
+                        )
+                        ->format(
+                            $settings->date_format
+                                .' '
+                                .$settings->time_format,
+                        ),
                 ],
             );
 
@@ -149,17 +145,12 @@ final class ActivityLogController extends Controller
             [
                 'logs' => $logs,
                 'filters' => [
-                    'search' =>
-                        $filters['search'] ?? '',
-                    'type' =>
-                        $filters['type'] ?? '',
-                    'logical_device_id' =>
-                        $filters['logical_device_id']
+                    'search' => $filters['search'] ?? '',
+                    'type' => $filters['type'] ?? '',
+                    'logical_device_id' => $filters['logical_device_id']
                             ?? '',
-                    'from' =>
-                        $filters['from'] ?? '',
-                    'to' =>
-                        $filters['to'] ?? '',
+                    'from' => $filters['from'] ?? '',
+                    'to' => $filters['to'] ?? '',
                 ],
                 'types' => ActivityLog::query()
                     ->select('type')
@@ -167,13 +158,12 @@ final class ActivityLogController extends Controller
                     ->orderBy('type')
                     ->pluck('type')
                     ->values(),
-                'logicalDevices' =>
-                    LogicalDevice::query()
-                        ->orderBy('name')
-                        ->get([
-                            'id',
-                            'name',
-                        ]),
+                'logicalDevices' => LogicalDevice::query()
+                    ->orderBy('name')
+                    ->get([
+                        'id',
+                        'name',
+                    ]),
             ],
         );
     }

@@ -93,12 +93,11 @@ final class ReverbEnvironmentDetector
             ],
             'configuration' => $configuration,
             'configured' => $configured,
-            'dependency_resolution_may_be_required' =>
-                $this->dependencyResolutionMayBeRequired(
-                    $guzzle,
-                    $psr7,
-                    $promises,
-                ),
+            'dependency_resolution_may_be_required' => $this->dependencyResolutionMayBeRequired(
+                $guzzle,
+                $psr7,
+                $promises,
+            ),
         ];
     }
 

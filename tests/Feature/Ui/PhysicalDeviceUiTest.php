@@ -77,8 +77,7 @@ it('updates an existing physical device', function () {
             $tree['physicalDevice'],
         ),
         [
-            'identifier' =>
-                $tree['physicalDevice']->identifier,
+            'identifier' => $tree['physicalDevice']->identifier,
             'name' => 'Updated Controller',
             'ip_address' => '192.168.2.101',
             'mac_address' => 'AA:BB:CC:DD:EE:01',
@@ -102,8 +101,7 @@ it('rejects duplicate physical device identifiers', function () {
     $this->post(
         route('laraiot.physical-devices.store'),
         [
-            'identifier' =>
-                $tree['physicalDevice']->identifier,
+            'identifier' => $tree['physicalDevice']->identifier,
             'name' => 'Duplicate',
             'ip_address' => null,
             'mac_address' => null,
@@ -132,16 +130,14 @@ it('does not delete a physical device which contains logical devices', function 
     $this->assertDatabaseHas(
         'laraiot_physical_devices',
         [
-            'id' =>
-                $tree['physicalDevice']->getKey(),
+            'id' => $tree['physicalDevice']->getKey(),
         ],
     );
 
     $this->assertDatabaseHas(
         'laraiot_logical_devices',
         [
-            'id' =>
-                $tree['logicalDevice']->getKey(),
+            'id' => $tree['logicalDevice']->getKey(),
         ],
     );
 });

@@ -82,8 +82,7 @@ final class DeviceTypeController extends Controller
     ): RedirectResponse {
         if ($deviceType->logicalDevices()->exists()) {
             return back()->withErrors([
-                'device_type' =>
-                    'A device type used by logical devices cannot be deleted.',
+                'device_type' => 'A device type used by logical devices cannot be deleted.',
             ]);
         }
 
