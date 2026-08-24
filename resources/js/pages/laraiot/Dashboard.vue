@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import {
     Activity,
     Boxes,
@@ -12,9 +12,11 @@ import {
 } from 'lucide-vue-next';
 
 import LaraIoTLayout from '../../layouts/laraiot/LaraIoTLayout.vue';
+import PhysicalDeviceCard from '../../components/laraiot/PhysicalDeviceCard.vue';
 import StatCard from '../../components/laraiot/StatCard.vue';
 import StatusBadge from '../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
+import { useLaraIoTPolling } from '../../composables/laraiot/useLaraIoTPolling.js';
 
 const props = defineProps({
     statistics: {
@@ -26,6 +28,10 @@ const props = defineProps({
         }),
     },
     recentActivity: {
+        type: Array,
+        default: () => [],
+    },
+    physicalDevices: {
         type: Array,
         default: () => [],
     },
@@ -42,6 +48,13 @@ const props = defineProps({
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
+
+useLaraIoTPolling([
+    'statistics',
+    'physicalDevices',
+    'recentActivity',
+    'mqtt',
+]);
 
 const mqttLabel = computed(() => {
     if (props.mqtt.connected === true) return 'Connected';
@@ -129,6 +142,50 @@ const activityStatus = (status) => {
                     :icon="mode === 'websocket' ? Zap : RefreshCw"
                     :tone="mode === 'websocket' ? 'purple' : 'slate'"
                 />
+            </section>
+
+            <section aria-labelledby="equipment-overview-title">
+                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h2
+                            id="equipment-overview-title"
+                            class="text-lg font-semibold text-[#0B1735]"
+                        >
+                            Equipment Overview
+                        </h2>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Configuration progress, live values and available controls grouped by physical device.
+                        </p>
+                    </div>
+
+                    <Link
+                        :href="laraiotUrl('devices/physical/create')"
+                        class="text-sm font-medium text-[#2583FF] hover:text-blue-700"
+                    >
+                        Add Physical Device
+                    </Link>
+                </div>
+
+                <div
+                    v-if="physicalDevices.length === 0"
+                    class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center"
+                >
+                    <Cpu class="mx-auto size-8 text-slate-300" />
+                    <p class="mt-3 text-sm font-medium text-[#0B1735]">
+                        No physical devices registered
+                    </p>
+                    <p class="mt-1 text-xs text-slate-500">
+                        Add the first physical controller to begin configuring its logical devices.
+                    </p>
+                </div>
+
+                <div v-else class="grid gap-4 xl:grid-cols-2">
+                    <PhysicalDeviceCard
+                        v-for="physicalDevice in physicalDevices"
+                        :key="physicalDevice.id"
+                        :physical-device="physicalDevice"
+                    />
+                </div>
             </section>
 
             <section class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.025]">

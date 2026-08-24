@@ -17,7 +17,20 @@ it('registers the complete optional UI route set in the test environment', funct
         ->values();
 
     expect($routes)
-        ->toHaveCount(30)
+        ->toHaveCount(31)
+        ->and(
+            route(
+                'laraiot.mqtt-topics.command',
+                [
+                    'logicalDevice' => 10,
+                    'mqttTopic' => 20,
+                ],
+                absolute: false,
+            ),
+        )
+        ->toBe(
+            '/laraiot/devices/logical/10/mqtt-topics/20/command',
+        )
         ->and(
             route(
                 'laraiot.dashboard',

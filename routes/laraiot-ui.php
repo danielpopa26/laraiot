@@ -6,6 +6,7 @@ use Danpopa\LaraIoT\Http\Controllers\Ui\ActivityLogController;
 use Danpopa\LaraIoT\Http\Controllers\Ui\ApplicationSettingsController;
 use Danpopa\LaraIoT\Http\Controllers\Ui\DashboardController;
 use Danpopa\LaraIoT\Http\Controllers\Ui\DeviceTypeController;
+use Danpopa\LaraIoT\Http\Controllers\Ui\LogicalDeviceCommandController;
 use Danpopa\LaraIoT\Http\Controllers\Ui\LogicalDeviceController;
 use Danpopa\LaraIoT\Http\Controllers\Ui\MqttTopicController;
 use Danpopa\LaraIoT\Http\Controllers\Ui\PhysicalDeviceController;
@@ -129,6 +130,11 @@ Route::middleware($middleware)
             '/devices/logical/{logicalDevice}/mqtt-topics/{mqttTopic}/validate',
             [MqttTopicController::class, 'validateTopic'],
         )->name('mqtt-topics.validate');
+
+        Route::post(
+            '/devices/logical/{logicalDevice}/mqtt-topics/{mqttTopic}/command',
+            LogicalDeviceCommandController::class,
+        )->name('mqtt-topics.command');
 
         Route::get(
             '/settings',

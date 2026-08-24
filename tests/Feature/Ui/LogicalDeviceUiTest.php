@@ -124,7 +124,35 @@ it('renders a logical device together with its MQTT topics', function () {
                     'logicalDevice.last_value',
                     42.5,
                 )
-                ->has('mqttTopics', 1),
+                ->has('mqttTopics', 1)
+                ->where(
+                    'deviceOverview.id',
+                    $tree['logicalDevice']->getKey(),
+                )
+                ->where(
+                    'deviceOverview.configuration.status',
+                    'state_topic_unvalidated',
+                ),
+        );
+});
+
+it('preselects a requested enabled physical device on create', function () {
+    $tree = UiTestData::deviceTree();
+
+    $this
+        ->get(
+            route('laraiot.logical-devices.create', [
+                'physical_device_id' => $tree['physicalDevice']
+                    ->getKey(),
+            ]),
+        )
+        ->assertOk()
+        ->assertInertia(
+            fn (Assert $page) => $page
+                ->where(
+                    'selectedPhysicalDeviceId',
+                    $tree['physicalDevice']->getKey(),
+                ),
         );
 });
 

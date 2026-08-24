@@ -5,15 +5,16 @@ import { ArrowLeft, Boxes, Save } from 'lucide-vue-next';
 import LaraIoTLayout from '../../../../layouts/laraiot/LaraIoTLayout.vue';
 import { useLaraIoTUrl } from '../../../../composables/laraiot/useLaraIoTUrl.js';
 
-defineProps({
+const props = defineProps({
     physicalDevices: { type: Array, default: () => [] },
     deviceTypes: { type: Array, default: () => [] },
+    selectedPhysicalDeviceId: { type: Number, default: null },
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
 
 const form = useForm({
-    physical_device_id: '',
+    physical_device_id: props.selectedPhysicalDeviceId ?? '',
     device_type_id: '',
     identifier: '',
     name: '',

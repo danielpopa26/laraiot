@@ -8,7 +8,10 @@ use Danpopa\LaraIoT\Http\Requests\Ui\LogicalDeviceRequest;
 use Danpopa\LaraIoT\Models\DeviceType;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Danpopa\LaraIoT\Support\Ui\LogicalDevicePresenter;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,11 +35,32 @@ final class LogicalDeviceController extends Controller
         );
     }
 
-    public function create(): Response
-    {
+    public function create(
+        Request $request,
+    ): Response {
+        $options = $this->formOptions();
+        $requestedPhysicalDeviceId = $request->integer(
+            'physical_device_id',
+        );
+
+        $selectedPhysicalDeviceId = null;
+
+        if (
+            $requestedPhysicalDeviceId > 0
+            && $options['physicalDevices']->contains(
+                'id',
+                $requestedPhysicalDeviceId,
+            )
+        ) {
+            $selectedPhysicalDeviceId = $requestedPhysicalDeviceId;
+        }
+
         return Inertia::render(
             'laraiot/devices/logical/Create',
-            $this->formOptions(),
+            [
+                ...$options,
+                'selectedPhysicalDeviceId' => $selectedPhysicalDeviceId,
+            ],
         );
     }
 
@@ -60,9 +84,10 @@ final class LogicalDeviceController extends Controller
 
     public function show(
         LogicalDevice $logicalDevice,
+        LogicalDevicePresenter $logicalDevicePresenter,
     ): Response {
         $logicalDevice->load([
-            'physicalDevice:id,name,identifier',
+            'physicalDevice:id,name,identifier,is_enabled',
             'deviceType:id,name,identifier',
             'mqttTopics' => fn ($query) => $query
                 ->orderBy('purpose')
@@ -74,6 +99,8 @@ final class LogicalDeviceController extends Controller
             [
                 'logicalDevice' => $logicalDevice,
                 'mqttTopics' => $logicalDevice->mqttTopics,
+                'deviceOverview' => $logicalDevicePresenter
+                    ->present($logicalDevice),
             ],
         );
     }
@@ -116,8 +143,7 @@ final class LogicalDeviceController extends Controller
     ): RedirectResponse {
         if ($logicalDevice->mqttTopics()->exists()) {
             return back()->withErrors([
-                'delete' =>
-                    'This logical device has one or more MQTT topics assigned.',
+                'delete' => 'This logical device has one or more MQTT topics assigned.',
             ]);
         }
 
@@ -133,8 +159,8 @@ final class LogicalDeviceController extends Controller
 
     /**
      * @return array{
-     *     physicalDevices: mixed,
-     *     deviceTypes: mixed
+     *     physicalDevices: Collection<int, PhysicalDevice>,
+     *     deviceTypes: Collection<int, DeviceType>
      * }
      */
     private function formOptions(

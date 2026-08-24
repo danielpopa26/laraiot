@@ -1,18 +1,27 @@
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, Boxes, Cpu, Fingerprint, Gauge, Pencil, Plus, Radio, Tag, Trash2 } from 'lucide-vue-next';
+import { ArrowLeft, Boxes, Cpu, Fingerprint, Gauge, Pencil, Plus, Power, Radio, Tag, Trash2 } from 'lucide-vue-next';
 
 import LaraIoTLayout from '../../../../layouts/laraiot/LaraIoTLayout.vue';
+import LogicalDeviceControl from '../../../../components/laraiot/LogicalDeviceControl.vue';
 import StatusBadge from '../../../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../../../composables/laraiot/useLaraIoTUrl.js';
+import { useLaraIoTPolling } from '../../../../composables/laraiot/useLaraIoTPolling.js';
 
 const props = defineProps({
     logicalDevice: { type: Object, required: true },
     mqttTopics: { type: Array, default: () => [] },
+    deviceOverview: { type: Object, required: true },
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
+
+useLaraIoTPolling([
+    'logicalDevice',
+    'mqttTopics',
+    'deviceOverview',
+]);
 
 const topics = computed(() =>
     props.mqttTopics.length > 0
@@ -190,6 +199,30 @@ const payloadSummary = (topic) => {
                             {{ topics.length }}
                         </p>
                     </div>
+                </div>
+            </section>
+
+            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex items-center gap-3 border-b border-slate-200 px-6 py-4">
+                    <span class="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-[#2583FF]">
+                        <Power class="size-4" />
+                    </span>
+                    <div>
+                        <h2 class="text-base font-semibold text-[#0B1735]">
+                            Device Operation
+                        </h2>
+                        <p class="mt-0.5 text-sm text-slate-500">
+                            Current MQTT value, configuration readiness and command control.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="p-4 sm:p-6">
+                    <LogicalDeviceControl
+                        :device="deviceOverview"
+                        :reload-props="['logicalDevice', 'mqttTopics', 'deviceOverview']"
+                        :show-configuration-link="false"
+                    />
                 </div>
             </section>
 
