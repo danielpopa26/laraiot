@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Http\Requests\Ui;
 
+use Danpopa\LaraIoT\Models\LogicalDevice;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -42,7 +43,7 @@ final class LogicalDeviceRequest extends FormRequest
                     'laraiot_logical_devices',
                     'identifier',
                 )->ignore(
-                    is_object($logicalDevice)
+                    $logicalDevice instanceof LogicalDevice
                         ? $logicalDevice->getKey()
                         : null,
                 ),

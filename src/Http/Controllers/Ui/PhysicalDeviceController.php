@@ -6,6 +6,7 @@ namespace Danpopa\LaraIoT\Http\Controllers\Ui;
 
 use Danpopa\LaraIoT\Http\Requests\Ui\PhysicalDeviceRequest;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
@@ -55,9 +56,11 @@ final class PhysicalDeviceController extends Controller
         PhysicalDevice $physicalDevice,
     ): Response {
         $physicalDevice->load([
-            'logicalDevices' => fn ($query) => $query
-                ->with('deviceType:id,name')
-                ->orderBy('name'),
+            'logicalDevices' => function (Relation $relation): void {
+                $relation->getQuery()
+                    ->with('deviceType:id,name')
+                    ->orderBy('name');
+            },
         ]);
 
         return Inertia::render(

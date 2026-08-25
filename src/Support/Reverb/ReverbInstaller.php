@@ -184,6 +184,9 @@ PHPFILE
         );
     }
 
+    /**
+     * @phpstan-impure
+     */
     private function runFreshArtisanReverbInstall(
         bool $interactive,
     ): bool {

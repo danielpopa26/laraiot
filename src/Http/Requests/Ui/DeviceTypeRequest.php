@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Http\Requests\Ui;
 
+use Danpopa\LaraIoT\Models\DeviceType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,7 @@ final class DeviceTypeRequest extends FormRequest
                     'laraiot_device_types',
                     'identifier',
                 )->ignore(
-                    is_object($deviceType)
+                    $deviceType instanceof DeviceType
                         ? $deviceType->getKey()
                         : null,
                 ),

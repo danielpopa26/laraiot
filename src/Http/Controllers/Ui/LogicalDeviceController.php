@@ -9,7 +9,9 @@ use Danpopa\LaraIoT\Models\DeviceType;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\PhysicalDevice;
 use Danpopa\LaraIoT\Support\Ui\LogicalDevicePresenter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -89,9 +91,11 @@ final class LogicalDeviceController extends Controller
         $logicalDevice->load([
             'physicalDevice:id,name,identifier,is_enabled',
             'deviceType:id,name,identifier',
-            'mqttTopics' => fn ($query) => $query
-                ->orderBy('purpose')
-                ->orderBy('topic'),
+            'mqttTopics' => function (Relation $relation): void {
+                $relation->getQuery()
+                    ->orderBy('purpose')
+                    ->orderBy('topic');
+            },
         ]);
 
         return Inertia::render(
@@ -169,7 +173,7 @@ final class LogicalDeviceController extends Controller
         $physicalDevices = PhysicalDevice::query()
             ->when(
                 ! $includeDisabled,
-                fn ($query) => $query
+                fn (Builder $query) => $query
                     ->where('is_enabled', true),
             )
             ->orderBy('name')
@@ -183,7 +187,7 @@ final class LogicalDeviceController extends Controller
         $deviceTypes = DeviceType::query()
             ->when(
                 ! $includeDisabled,
-                fn ($query) => $query
+                fn (Builder $query) => $query
                     ->where('is_enabled', true),
             )
             ->orderBy('name')

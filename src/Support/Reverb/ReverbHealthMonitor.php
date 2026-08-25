@@ -10,6 +10,25 @@ use Illuminate\Contracts\Config\Repository as ConfigRepository;
 use Illuminate\Support\Carbon;
 use Throwable;
 
+/**
+ * @phpstan-type ReverbClient array{
+ *     key: string,
+ *     host: string,
+ *     port: int,
+ *     scheme: string
+ * }
+ * @phpstan-type ReverbSnapshot array{
+ *     configured: bool,
+ *     live: bool,
+ *     selectable: bool,
+ *     status: string,
+ *     label: string,
+ *     detail: string,
+ *     checked_at: string,
+ *     client: ReverbClient|null,
+ *     reconnect_interval: int
+ * }
+ */
 final class ReverbHealthMonitor
 {
     private readonly Closure $probe;
@@ -23,17 +42,7 @@ final class ReverbHealthMonitor
     }
 
     /**
-     * @return array{
-     *     configured: bool,
-     *     live: bool,
-     *     selectable: bool,
-     *     status: string,
-     *     label: string,
-     *     detail: string,
-     *     checked_at: string,
-     *     client: array{key: string, host: string, port: int, scheme: string}|null,
-     *     reconnect_interval: int
-     * }
+     * @return ReverbSnapshot
      */
     public function snapshot(bool $force = false): array
     {
@@ -307,7 +316,7 @@ final class ReverbHealthMonitor
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return ReverbSnapshot|null
      */
     private function cachedSnapshot(): ?array
     {
@@ -319,13 +328,13 @@ final class ReverbHealthMonitor
             return null;
         }
 
-        return is_array($snapshot)
+        return $this->isSnapshot($snapshot)
             ? $snapshot
             : null;
     }
 
     /**
-     * @param  array<string, mixed>  $snapshot
+     * @param  ReverbSnapshot  $snapshot
      */
     private function cacheSnapshot(array $snapshot): void
     {
@@ -344,17 +353,7 @@ final class ReverbHealthMonitor
     }
 
     /**
-     * @return array{
-     *     configured: false,
-     *     live: false,
-     *     selectable: false,
-     *     status: string,
-     *     label: string,
-     *     detail: string,
-     *     checked_at: string,
-     *     client: null,
-     *     reconnect_interval: int
-     * }
+     * @return ReverbSnapshot
      */
     private function notConfiguredSnapshot(): array
     {
@@ -369,6 +368,37 @@ final class ReverbHealthMonitor
             'client' => null,
             'reconnect_interval' => $this->reconnectInterval(),
         ];
+    }
+
+    /**
+     * @phpstan-assert-if-true ReverbSnapshot $snapshot
+     */
+    private function isSnapshot(mixed $snapshot): bool
+    {
+        if (! is_array($snapshot)) {
+            return false;
+        }
+
+        $client = $snapshot['client'] ?? null;
+        $clientIsValid = $client === null
+            || (
+                is_array($client)
+                && is_string($client['key'] ?? null)
+                && is_string($client['host'] ?? null)
+                && is_int($client['port'] ?? null)
+                && is_string($client['scheme'] ?? null)
+            );
+
+        return is_bool($snapshot['configured'] ?? null)
+            && is_bool($snapshot['live'] ?? null)
+            && is_bool($snapshot['selectable'] ?? null)
+            && is_string($snapshot['status'] ?? null)
+            && is_string($snapshot['label'] ?? null)
+            && is_string($snapshot['detail'] ?? null)
+            && is_string($snapshot['checked_at'] ?? null)
+            && array_key_exists('client', $snapshot)
+            && $clientIsValid
+            && is_int($snapshot['reconnect_interval'] ?? null);
     }
 
     /**

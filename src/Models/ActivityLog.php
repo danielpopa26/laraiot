@@ -7,7 +7,11 @@ namespace Danpopa\LaraIoT\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $happened_at
+ */
 class ActivityLog extends Model
 {
     protected $table = 'laraiot_activity_logs';

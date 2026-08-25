@@ -58,7 +58,7 @@ final class ApplicationSettingsController extends Controller
                 force: true,
             );
 
-            if (($websocket['selectable'] ?? false) !== true) {
+            if ($websocket['selectable'] !== true) {
                 return back()
                     ->withErrors([
                         'application_mode' => 'WebSocket mode cannot be enabled because the Laravel Reverb server is not live.',

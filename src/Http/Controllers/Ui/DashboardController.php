@@ -12,6 +12,7 @@ use Danpopa\LaraIoT\Models\PhysicalDevice;
 use Danpopa\LaraIoT\Services\MqttHealthMonitor;
 use Danpopa\LaraIoT\Support\Reverb\ReverbHealthMonitor;
 use Danpopa\LaraIoT\Support\Ui\LogicalDevicePresenter;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,21 +28,25 @@ final class DashboardController extends Controller
         $websocket = $reverbHealthMonitor->snapshot();
         $requestedMode = $settings->application_mode;
         $mode = $requestedMode === ApplicationSetting::MODE_WEBSOCKET
-            && ($websocket['live'] ?? false) === true
+            && $websocket['live'] === true
                 ? ApplicationSetting::MODE_WEBSOCKET
                 : ApplicationSetting::MODE_POLLING;
 
         $physicalDevices = PhysicalDevice::query()
             ->with([
-                'logicalDevices' => fn ($query) => $query
-                    ->with([
-                        'physicalDevice:id,name,identifier,is_enabled',
-                        'deviceType:id,name,identifier',
-                        'mqttTopics' => fn ($topicQuery) => $topicQuery
-                            ->orderBy('purpose')
-                            ->orderBy('id'),
-                    ])
-                    ->orderBy('name'),
+                'logicalDevices' => function (Relation $relation): void {
+                    $relation->getQuery()
+                        ->with([
+                            'physicalDevice:id,name,identifier,is_enabled',
+                            'deviceType:id,name,identifier',
+                            'mqttTopics' => function (Relation $topicRelation): void {
+                                $topicRelation->getQuery()
+                                    ->orderBy('purpose')
+                                    ->orderBy('id');
+                            },
+                        ])
+                        ->orderBy('name');
+                },
             ])
             ->orderBy('name')
             ->get()

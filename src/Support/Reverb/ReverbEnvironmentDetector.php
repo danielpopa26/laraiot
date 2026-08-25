@@ -69,7 +69,7 @@ final class ReverbEnvironmentDetector
             ),
         ];
 
-        $configured = ($reverb['installed'] ?? false) === true
+        $configured = $reverb['installed'] === true
             && $configuration['broadcasting_config_exists'] === true
             && $configuration['reverb_config_exists'] === true
             && $configuration['channels_route_exists'] === true
@@ -250,7 +250,7 @@ final class ReverbEnvironmentDetector
             return null;
         }
 
-        $value = trim((string) ($matches[1] ?? ''));
+        $value = trim((string) $matches[1]);
 
         if ($value === '') {
             return '';

@@ -7,6 +7,7 @@ namespace Danpopa\LaraIoT\Support\Ui;
 use Danpopa\LaraIoT\Models\LogicalDevice;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 final class LogicalDevicePresenter
 {
@@ -19,9 +20,11 @@ final class LogicalDevicePresenter
         $logicalDevice->loadMissing([
             'physicalDevice:id,name,identifier,is_enabled',
             'deviceType:id,name,identifier',
-            'mqttTopics' => fn ($query) => $query
-                ->orderBy('purpose')
-                ->orderBy('id'),
+            'mqttTopics' => function (Relation $relation): void {
+                $relation->getQuery()
+                    ->orderBy('purpose')
+                    ->orderBy('id');
+            },
         ]);
 
         /** @var Collection<int, MqttTopic> $topics */

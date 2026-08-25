@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Http\Requests\Ui;
 
+use Danpopa\LaraIoT\Models\PhysicalDevice;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,7 +33,7 @@ final class PhysicalDeviceRequest extends FormRequest
                     'laraiot_physical_devices',
                     'identifier',
                 )->ignore(
-                    is_object($physicalDevice)
+                    $physicalDevice instanceof PhysicalDevice
                         ? $physicalDevice->getKey()
                         : null,
                 ),
