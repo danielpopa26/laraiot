@@ -175,9 +175,15 @@ final class UiEnvironmentDetector
             ),
             'root_view_exists' => $inertiaViewPath !== null,
             'root_view_path' => $inertiaViewPath,
-            'root_view_has_inertia_directive' => str_contains(
+            'root_view_has_inertia_directive' => (
+                preg_match('/@inertia(?!Head)\\b/', $inertiaView) === 1
+                && str_contains($inertiaView, '@inertiaHead')
+            ) || $this->containsAll(
                 $inertiaView,
-                '@inertia',
+                [
+                    '<x-inertia::head',
+                    '<x-inertia::app',
+                ],
             ),
         ];
 

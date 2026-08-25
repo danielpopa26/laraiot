@@ -222,7 +222,10 @@ final class UiInstaller
             return;
         }
 
-        $contents = <<<'JS'
+        $contents = str_replace(
+            '__LARAIOT_JS_ENTRY__',
+            $this->javascriptEntryRelativePath(),
+            <<<'JS'
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
@@ -233,7 +236,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/js/app.js',
+                '__LARAIOT_JS_ENTRY__',
             ],
             refresh: true,
         }),
@@ -241,7 +244,8 @@ export default defineConfig({
         vue(),
     ],
 });
-JS;
+JS,
+        );
 
         $this->writeFile($path, $contents."\n");
     }
@@ -300,7 +304,9 @@ JS;
 
     private function configureInertiaVueBootstrap(): void
     {
-        $path = $this->path('resources/js/app.js');
+        $path = $this->path(
+            $this->javascriptEntryRelativePath(),
+        );
 
         if (is_file($path)) {
             $current = $this->readFile($path);
@@ -353,34 +359,35 @@ JS;
         if (is_file($path)) {
             $current = $this->readFile($path);
 
-            if (
-                str_contains($current, '@inertia')
-                && str_contains($current, '@inertiaHead')
-            ) {
+            if ($this->hasInertiaRootView($current)) {
                 return;
             }
 
             $this->backupFile($path);
         }
 
-        $contents = <<<'BLADE'
+        $contents = str_replace(
+            '__LARAIOT_JS_ENTRY__',
+            $this->javascriptEntryRelativePath(),
+            <<<'BLADE'
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
-
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @inertiaHead
+        @vite(['resources/css/app.css', '__LARAIOT_JS_ENTRY__'])
+        <x-inertia::head>
+            <title>{{ config('app.name', 'Laravel') }}</title>
+        </x-inertia::head>
     </head>
 
     <body>
-        @inertia
+        <x-inertia::app />
     </body>
 </html>
-BLADE;
+BLADE,
+        );
 
         $this->writeFile($path, $contents."\n");
     }
@@ -583,6 +590,39 @@ BLADE;
         }
 
         return null;
+    }
+
+    private function javascriptEntryRelativePath(): string
+    {
+        foreach (
+            [
+                'resources/js/app.ts',
+                'resources/js/app.js',
+                'resources/js/app.tsx',
+                'resources/js/app.jsx',
+            ] as $relativePath
+        ) {
+            if (is_file($this->path($relativePath))) {
+                return $relativePath;
+            }
+        }
+
+        return 'resources/js/app.js';
+    }
+
+    private function hasInertiaRootView(string $contents): bool
+    {
+        $hasLegacyDirectives = preg_match(
+            '/@inertia(?!Head)\\b/',
+            $contents,
+        ) === 1 && str_contains($contents, '@inertiaHead');
+
+        $hasInertiaComponents = str_contains(
+            $contents,
+            '<x-inertia::head',
+        ) && str_contains($contents, '<x-inertia::app');
+
+        return $hasLegacyDirectives || $hasInertiaComponents;
     }
 
     private function backupFile(string $path): void
