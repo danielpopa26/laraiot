@@ -134,7 +134,11 @@ final class UiInstaller
         UiInstallationPlan $plan,
         array &$steps,
     ): void {
-        $packagesToAdd = $plan->nodePackagesToAdd();
+        /** @var list<string> $packagesToAdd */
+        $packagesToAdd = array_values(array_unique(array_merge(
+            $plan->nodePackagesToAdd(),
+            $plan->declaredButNotInstalled(),
+        )));
 
         $runtimePackages = array_values(
             array_intersect(
