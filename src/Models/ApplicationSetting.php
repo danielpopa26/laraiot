@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Danpopa\LaraIoT\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $timezone
  * @property string $date_format
  * @property string $time_format
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class ApplicationSetting extends Model
 {

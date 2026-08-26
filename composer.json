@@ -19,9 +19,9 @@
         }
     ],
     "require": {
-        "illuminate/broadcasting": "^13.0",
-        "illuminate/database": "^13.0",
-        "illuminate/support": "^13.0",
+        "illuminate/broadcasting": "^11.0|^12.0|^13.0",
+        "illuminate/database": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0",
         "php": "^8.3",
         "php-mqtt/client": "^2.3"
     },
@@ -31,9 +31,9 @@
         "laravel/pao": "^1.0",
         "laravel/pint": "^1.29",
         "laravel/reverb": "^1.11",
-        "orchestra/testbench": "^11.0",
-        "pestphp/pest": "^4.6",
-        "pestphp/pest-plugin-laravel": "^4.1",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^2.0|^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0",
         "pestphp/pest-plugin-type-coverage": "^4.0",
         "phpstan/extension-installer": "^1.4"
     },

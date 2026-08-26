@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
  * @property int $logical_device_id
  * @property string $purpose
  * @property string $topic
@@ -22,6 +24,10 @@ use Illuminate\Support\Carbon;
  * @property mixed $last_value
  * @property Carbon|null $last_received_at
  * @property string|null $last_error
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read LogicalDevice|null $logicalDevice
+ * @property-read Collection<int, ActivityLog> $activityLogs
  */
 final class MqttTopic extends Model
 {

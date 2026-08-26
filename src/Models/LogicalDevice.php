@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,6 +19,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property mixed $last_value
  * @property string|null $unit
  * @property bool $is_enabled
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read PhysicalDevice|null $physicalDevice
+ * @property-read DeviceType|null $deviceType
+ * @property-read Collection<int, MqttTopic> $mqttTopics
+ * @property-read Collection<int, ActivityLog> $activityLogs
  */
 class LogicalDevice extends Model
 {

@@ -10,7 +10,21 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property string $type
+ * @property int|null $logical_device_id
+ * @property int|null $mqtt_topic_id
+ * @property string|null $actor_type
+ * @property int|string|null $actor_id
+ * @property string $title
+ * @property string|null $description
+ * @property array<string, mixed>|null $data
  * @property Carbon|null $happened_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read LogicalDevice|null $logicalDevice
+ * @property-read MqttTopic|null $mqttTopic
+ * @property-read Model|null $actor
  */
 class ActivityLog extends Model
 {
