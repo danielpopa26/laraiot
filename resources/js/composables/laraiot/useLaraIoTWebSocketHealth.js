@@ -3,12 +3,41 @@ import { usePage } from '@inertiajs/vue3';
 
 export const websocketConnectionStatus = ref('idle');
 
+const STATE_CHANNEL = 'laraiot.devices';
+const STATE_EVENT = 'logical-device.state-updated';
+const stateListeners = new Set();
+
 let active = false;
 let healthSocket = null;
 let reconnectTimer = null;
 let connectionGeneration = 0;
 let currentClient = null;
 let currentReconnectInterval = 3;
+let subscriptionRequested = false;
+
+/**
+ * Register a listener for logical-device state events received from Reverb.
+ *
+ * @param {(event: Record<string, any>) => void} listener
+ * @returns {() => void}
+ */
+export const onLaraIoTStateUpdate = (listener) => {
+    stateListeners.add(listener);
+
+    return () => {
+        stateListeners.delete(listener);
+    };
+};
+
+const notifyStateUpdate = (event) => {
+    stateListeners.forEach((listener) => {
+        try {
+            listener(event);
+        } catch {
+            // A page-level listener must not break the shared socket.
+        }
+    });
+};
 
 const clearReconnectTimer = () => {
     if (reconnectTimer !== null) {
@@ -18,17 +47,43 @@ const clearReconnectTimer = () => {
 };
 
 const closeHealthSocket = () => {
-    if (healthSocket === null) {
+    subscriptionRequested = false;
+    const socket = healthSocket;
+
+    if (socket === null) {
         return;
     }
 
-    const socket = healthSocket;
     healthSocket = null;
     socket.onopen = null;
     socket.onmessage = null;
     socket.onerror = null;
     socket.onclose = null;
     socket.close();
+};
+
+const parseSocketData = (data) => {
+    if (typeof data !== 'string') {
+        return data ?? {};
+    }
+
+    try {
+        return JSON.parse(data);
+    } catch {
+        return {};
+    }
+};
+
+const subscribeToStateChannel = (socket, generation) => {
+    if (subscriptionRequested || generation !== connectionGeneration || socket !== healthSocket) {
+        return;
+    }
+
+    subscriptionRequested = true;
+    socket.send(JSON.stringify({
+        event: 'pusher:subscribe',
+        data: { channel: STATE_CHANNEL },
+    }));
 };
 
 const websocketUrl = (client) => {
@@ -91,16 +146,13 @@ const connect = () => {
             return;
         }
 
-        let payload;
-
-        try {
-            payload = JSON.parse(message.data);
-        } catch {
-            return;
-        }
+        const payload = parseSocketData(message.data);
 
         if (payload.event === 'pusher:connection_established') {
             websocketConnectionStatus.value = 'connected';
+
+            subscribeToStateChannel(healthSocket, generation);
+
             return;
         }
 
@@ -115,6 +167,26 @@ const connect = () => {
         if (payload.event === 'pusher:error') {
             websocketConnectionStatus.value = 'unavailable';
             healthSocket?.close();
+
+            return;
+        }
+
+        if (payload.event === 'pusher:subscription_error') {
+            websocketConnectionStatus.value = 'unavailable';
+            healthSocket?.close();
+
+            return;
+        }
+
+        if (
+            payload.event === STATE_EVENT
+            && payload.channel === STATE_CHANNEL
+        ) {
+            const eventData = parseSocketData(payload.data);
+
+            if (eventData && typeof eventData === 'object') {
+                notifyStateUpdate(eventData);
+            }
         }
     };
 
@@ -141,6 +213,7 @@ const stop = () => {
     connectionGeneration += 1;
     clearReconnectTimer();
     closeHealthSocket();
+    subscriptionRequested = false;
     websocketConnectionStatus.value = 'idle';
 };
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Danpopa\LaraIoT\Events;
 
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 final class LogicalDeviceStateUpdated implements ShouldBroadcastNow
@@ -21,12 +21,12 @@ final class LogicalDeviceStateUpdated implements ShouldBroadcastNow
     ) {}
 
     /**
-     * @return array<int, PrivateChannel>
+     * @return array<int, Channel>
      */
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel(self::CHANNEL),
+            new Channel(self::CHANNEL),
         ];
     }
 

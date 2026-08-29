@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, Boxes, Cpu, Fingerprint, Gauge, Pencil, Plus, Power, Radio, Tag, Trash2 } from 'lucide-vue-next';
 
@@ -8,6 +8,7 @@ import LogicalDeviceControl from '../../../../components/laraiot/LogicalDeviceCo
 import StatusBadge from '../../../../components/laraiot/StatusBadge.vue';
 import { useLaraIoTUrl } from '../../../../composables/laraiot/useLaraIoTUrl.js';
 import { useLaraIoTPolling } from '../../../../composables/laraiot/useLaraIoTPolling.js';
+import { onLaraIoTStateUpdate } from '../../../../composables/laraiot/useLaraIoTWebSocketHealth.js';
 
 const props = defineProps({
     logicalDevice: { type: Object, required: true },
@@ -16,6 +17,26 @@ const props = defineProps({
 });
 
 const { laraiotUrl } = useLaraIoTUrl();
+
+const liveLastValue = ref(props.logicalDevice.last_value);
+
+watch(
+    () => props.logicalDevice.last_value,
+    (value) => {
+        liveLastValue.value = value;
+    },
+);
+
+const unsubscribeStateUpdates = onLaraIoTStateUpdate((event) => {
+    if (
+        Number(event.logical_device_id)
+        !== Number(props.logicalDevice.id)
+    ) {
+        return;
+    }
+
+    liveLastValue.value = event.value;
+});
 
 useLaraIoTPolling([
     'logicalDevice',
@@ -31,7 +52,7 @@ const topics = computed(() =>
 );
 
 const formattedLastValue = computed(() => {
-    const value = props.logicalDevice.last_value;
+    const value = liveLastValue.value;
 
     if (value === null || value === undefined || value === '') {
         return '—';
@@ -83,6 +104,8 @@ const payloadSummary = (topic) => {
 
     return mapping.format ?? 'raw';
 };
+
+onBeforeUnmount(unsubscribeStateUpdates);
 </script>
 
 <template>

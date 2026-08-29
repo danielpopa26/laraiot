@@ -9,7 +9,6 @@ use Danpopa\LaraIoT\Console\Commands\ListenMqttCommand;
 use Danpopa\LaraIoT\Console\Commands\PublishMqttCommand;
 use Danpopa\LaraIoT\Contracts\MqttClientFactory;
 use Danpopa\LaraIoT\Contracts\MqttPublisher as MqttPublisherContract;
-use Danpopa\LaraIoT\Events\LogicalDeviceStateUpdated;
 use Danpopa\LaraIoT\Models\ApplicationSetting;
 use Danpopa\LaraIoT\Models\MqttTopic;
 use Danpopa\LaraIoT\Observers\MqttTopicObserver;
@@ -19,7 +18,6 @@ use Danpopa\LaraIoT\Services\MqttPublisher;
 use Danpopa\LaraIoT\Services\PhpMqttClientFactory;
 use Danpopa\LaraIoT\Support\Reverb\ReverbHealthMonitor;
 use Illuminate\Contracts\Config\Repository as ConfigRepository;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Throwable;
@@ -163,11 +161,6 @@ class LaraIoTServiceProvider extends ServiceProvider
 
         MqttTopic::observe(
             MqttTopicObserver::class,
-        );
-
-        Broadcast::channel(
-            LogicalDeviceStateUpdated::CHANNEL,
-            static fn (mixed $user): bool => $user !== null,
         );
 
         if (! $this->app->runningInConsole()) {

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Danpopa\LaraIoT\Events\LogicalDeviceStateUpdated;
-use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 it('defines the logical device state broadcast contract', function () {
@@ -31,7 +31,7 @@ it('defines the logical device state broadcast contract', function () {
     expect($channels)
         ->toHaveCount(1)
         ->and($channels[0])
-        ->toBeInstanceOf(PrivateChannel::class)
+        ->toBeInstanceOf(Channel::class)
         ->and((string) $channels[0])
-        ->toBe('private-laraiot.devices');
+        ->toBe('laraiot.devices');
 });

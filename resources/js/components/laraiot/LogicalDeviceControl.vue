@@ -12,6 +12,7 @@ import {
 
 import StatusBadge from './StatusBadge.vue';
 import { useLaraIoTUrl } from '../../composables/laraiot/useLaraIoTUrl.js';
+import { onLaraIoTStateUpdate } from '../../composables/laraiot/useLaraIoTWebSocketHealth.js';
 
 const props = defineProps({
     device: {
@@ -36,11 +37,49 @@ const { laraiotUrl } = useLaraIoTUrl();
 const commandForm = useForm({ command: '' });
 const pendingCommand = ref(null);
 const confirmationFailed = ref(false);
+const liveLastValue = ref(props.device.last_value);
+const liveCurrentState = ref(props.device.control?.current_state ?? null);
 let pollTimer = null;
 let deadlineTimer = null;
 
+watch(
+    () => props.device.last_value,
+    (value) => {
+        liveLastValue.value = value;
+    },
+);
+
+watch(
+    () => props.device.control?.current_state,
+    (state) => {
+        liveCurrentState.value = state ?? null;
+    },
+);
+
+const unsubscribeStateUpdates = onLaraIoTStateUpdate((event) => {
+    if (
+        Number(event.logical_device_id)
+        !== Number(props.device.id)
+    ) {
+        return;
+    }
+
+    liveLastValue.value = event.value;
+
+    if (typeof event.value !== 'string') {
+        liveCurrentState.value = null;
+        return;
+    }
+
+    const state = event.value.trim().toLowerCase();
+
+    liveCurrentState.value = ['on', 'off'].includes(state)
+        ? state
+        : null;
+});
+
 const formattedValue = computed(() => {
-    const value = props.device.last_value;
+    const value = liveLastValue.value;
 
     if (value === null || value === undefined || value === '') {
         return '—';
@@ -58,7 +97,7 @@ const formattedValue = computed(() => {
 });
 
 const currentState = computed(() =>
-    props.device.control?.current_state ?? null,
+    liveCurrentState.value,
 );
 
 const hasCommandTopic = computed(() =>
@@ -225,7 +264,10 @@ watch(currentState, (state) => {
     }
 });
 
-onBeforeUnmount(clearTimers);
+onBeforeUnmount(() => {
+    clearTimers();
+    unsubscribeStateUpdates();
+});
 </script>
 
 <template>
