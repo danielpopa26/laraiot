@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Danpopa\LaraIoT\Http\Requests\Ui;
+
+use Danpopa\LaraIoT\Models\PhysicalDevice;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+final class PhysicalDeviceRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        $physicalDevice =
+            $this->route('physicalDevice');
+
+        return [
+            'identifier' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9_-]+$/',
+                Rule::unique(
+                    'laraiot_physical_devices',
+                    'identifier',
+                )->ignore(
+                    $physicalDevice instanceof PhysicalDevice
+                        ? $physicalDevice->getKey()
+                        : null,
+                ),
+            ],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'ip_address' => [
+                'nullable',
+                'ip',
+            ],
+            'mac_address' => [
+                'nullable',
+                'mac_address',
+            ],
+            'description' => [
+                'nullable',
+                'string',
+            ],
+            'is_enabled' => [
+                'required',
+                'boolean',
+            ],
+        ];
+    }
+}

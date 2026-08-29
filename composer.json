@@ -4,10 +4,12 @@
     "description": "A Laravel package for developing monitoring and control applications for Internet of Things (IoT) devices.",
     "keywords": [
         "laravel",
-        "danpopa",
-        "laraiot"
+        "iot",
+        "mqtt",
+        "polling",
+        "websocket"
     ],
-    "homepage": "https://github.com/danpopa/laraiot",
+    "homepage": "https://github.com/danielpopa26/laraiot",
     "license": "MIT",
     "authors": [
         {
@@ -17,16 +19,21 @@
         }
     ],
     "require": {
+        "illuminate/broadcasting": "^11.0|^12.0|^13.0",
+        "illuminate/database": "^11.0|^12.0|^13.0",
+        "illuminate/support": "^11.0|^12.0|^13.0",
         "php": "^8.3",
-        "illuminate/support": "^12.0||^13.0"
+        "php-mqtt/client": "^2.3"
     },
     "require-dev": {
+        "inertiajs/inertia-laravel": "^3.0",
         "larastan/larastan": "^3.9",
-        "laravel/pint": "^1.29",
         "laravel/pao": "^1.0",
-        "orchestra/testbench": "^10.0||^11.0",
-        "pestphp/pest": "^4.6",
-        "pestphp/pest-plugin-laravel": "^4.1",
+        "laravel/pint": "^1.29",
+        "laravel/reverb": "^1.11",
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^2.0|^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0",
         "pestphp/pest-plugin-type-coverage": "^4.0",
         "phpstan/extension-installer": "^1.4"
     },
@@ -72,7 +79,8 @@
             "vendor/bin/pest --type-coverage --min=100"
         ],
         "test:unit": [
-            "vendor/bin/pest --parallel"
+            "vendor/bin/pest --parallel --exclude-group=install",
+            "vendor/bin/pest --group=install"
         ],
         "test": [
             "@analyse",
@@ -99,5 +107,8 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "suggest": {
+        "laravel/reverb": "Required only when LaraIoT WebSocket mode is enabled."
+    }
 }

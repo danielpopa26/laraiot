@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Danpopa\LaraIoT\LaraIoT;
+use Danpopa\LaraIoT\LaraIoTServiceProvider;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Support\ServiceProvider;
 
 it('resolves the singleton', function () {
     expect(app(LaraIoT::class))->toBeInstanceOf(LaraIoT::class);
@@ -12,8 +15,110 @@ it('returns the same instance from the container', function () {
     expect(app(LaraIoT::class))->toBe(app(LaraIoT::class));
 });
 
-it('merges the package config', function () {
-    expect(config('laraiot.placeholder'))->toBe('default');
+it('merges the package configuration', function () {
+    $packageConfig = require dirname(__DIR__, 2)
+        .'/config/laraiot.php';
+
+    expect(config('laraiot.mode'))->toBe('polling')
+        ->and($packageConfig['ui']['enabled'])->toBeFalse()
+        ->and(config('laraiot.ui.prefix'))->toBe('laraiot')
+        ->and(config('laraiot.api.enabled'))->toBeTrue()
+        ->and(config('laraiot.api.prefix'))->toBe('api/laraiot')
+        ->and(config('laraiot.polling.interval'))->toBe(10)
+        ->and(config('laraiot.mqtt.port'))->toBe(1883)
+        ->and(config('laraiot.mqtt.health.stale_after'))
+        ->toBe(20)
+        ->and(config('laraiot.mqtt.testing.state_timeout'))
+        ->toBe(30)
+        ->and(config('laraiot.mqtt.testing.command_timeout'))
+        ->toBe(12)
+        ->and(config('laraiot.websocket.health.cache_ttl'))
+        ->toBe(5)
+        ->and(config('laraiot.websocket.health.timeout'))
+        ->toBe(1)
+        ->and($packageConfig['mqtt']['health']['stale_after'])
+        ->toBe(20)
+        ->and($packageConfig['websocket']['health']['cache_ttl'])
+        ->toBe(5);
+});
+
+it('backfills MQTT health defaults for an older published config', function () {
+    config()->set('laraiot.mqtt', [
+        'host' => 'mqtt.legacy.test',
+        'port' => 1884,
+    ]);
+
+    (new LaraIoTServiceProvider($this->app))->register();
+
+    expect(config('laraiot.mqtt.host'))
+        ->toBe('mqtt.legacy.test')
+        ->and(config('laraiot.mqtt.port'))
+        ->toBe(1884)
+        ->and(config('laraiot.mqtt.health.cache_key'))
+        ->toBe('laraiot:mqtt:health')
+        ->and(config('laraiot.mqtt.health.stale_after'))
+        ->toBe(20)
+        ->and(config('laraiot.mqtt.testing.state_timeout'))
+        ->toBe(30)
+        ->and(config('laraiot.mqtt.testing.command_timeout'))
+        ->toBe(12)
+        ->and(config('laraiot.mqtt.testing.token_ttl'))
+        ->toBe(10);
+});
+
+it('backfills WebSocket health defaults for an older published config', function () {
+    config()->set('laraiot.websocket', [
+        'connection' => 'reverb',
+    ]);
+
+    (new LaraIoTServiceProvider($this->app))->register();
+
+    expect(config('laraiot.websocket.connection'))
+        ->toBe('reverb')
+        ->and(config('laraiot.websocket.health.cache_key'))
+        ->toBe('laraiot:websocket:health')
+        ->and(config('laraiot.websocket.health.cache_ttl'))
+        ->toBe(5)
+        ->and(config('laraiot.websocket.health.reconnect_interval'))
+        ->toBe(3);
+});
+
+it('registers the package publish groups', function () {
+    $packageRoot = dirname(__DIR__, 2);
+
+    expect(ServiceProvider::pathsToPublish(
+        LaraIoTServiceProvider::class,
+        'laraiot-config',
+    ))->toBe([
+        $packageRoot.'/src/../config/laraiot.php' => config_path('laraiot.php'),
+    ])->and(ServiceProvider::pathsToPublish(
+        LaraIoTServiceProvider::class,
+        'laraiot-migrations',
+    ))->toBe([
+        $packageRoot.'/src/../database/migrations' => database_path('migrations'),
+    ]);
+});
+
+it('contains the publishable package resources', function () {
+    $packageRoot = dirname(__DIR__, 2);
+    $migrationFiles = glob(
+        $packageRoot.'/database/migrations/*.php',
+    ) ?: [];
+
+    expect(is_file($packageRoot.'/config/laraiot.php'))->toBeTrue()
+        ->and(is_dir($packageRoot.'/database/migrations'))->toBeTrue()
+        ->and($migrationFiles)->not->toBeEmpty();
+});
+
+it('registers the installation command and its force option', function () {
+    $commands = app(Kernel::class)->all();
+
+    expect($commands)->toHaveKey('laraiot:install')
+        ->and(
+            $commands['laraiot:install']
+                ->getDefinition()
+                ->hasOption('force'),
+        )->toBeTrue();
 });
 
 it('loads the package translations', function () {
@@ -24,8 +129,14 @@ it('loads the package views', function () {
     expect(view()->exists('laraiot::placeholder'))->toBeTrue();
 });
 
-it('registers the artisan command', function () {
-    $this->artisan('laraiot:placeholder')
-        ->expectsOutputToContain('LaraIoT placeholder command executed.')
+it('registers and executes the installation command', function () {
+    $question = $question = 'Install and configure Laravel Reverb for optional WebSocket mode now?';
+    $this->artisan('laraiot:install', ['--force' => true])
+        ->expectsConfirmation($question, 'no')
+        ->expectsOutputToContain(
+            'No WebSocket infrastructure changes were made.',
+        )
+        ->expectsOutputToContain('LaraIoT installed successfully.')
+        ->expectsOutputToContain('php artisan migrate')
         ->assertSuccessful();
-});
+})->group('install');

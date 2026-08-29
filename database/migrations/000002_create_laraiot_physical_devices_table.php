@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('laraiot_physical_devices', function (Blueprint $table) {
+            $table->id();
+            $table->string('identifier')->unique();
+            $table->string('name');
+            $table->ipAddress('ip_address')->nullable();
+            $table->macAddress('mac_address')->nullable();
+            $table->text('description')->nullable();
+            $table->boolean('is_enabled')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('laraiot_physical_devices');
+    }
+};

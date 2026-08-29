@@ -2,8 +2,283 @@
 
 declare(strict_types=1);
 
+use Danpopa\LaraIoT\Services\Parsers\JsonPayloadParser;
+use Danpopa\LaraIoT\Services\Parsers\RawPayloadParser;
+
 return [
 
-    'placeholder' => 'default',
+    /*
+    |--------------------------------------------------------------------------
+    | Communication Mode
+    |--------------------------------------------------------------------------
+    |
+    | Supported modes: "polling" and "websocket".
+    |
+    */
+
+    'mode' => env('LARAIOT_MODE', 'polling'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Timezone
+    |--------------------------------------------------------------------------
+    |
+    | When null, LaraIoT will use the host application's timezone.
+    |
+    */
+
+    'timezone' => env('LARAIOT_TIMEZONE'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Optional User Interface
+    |--------------------------------------------------------------------------
+    */
+
+    'ui' => [
+        'enabled' => env('LARAIOT_UI_ENABLED', false),
+        'prefix' => env('LARAIOT_UI_PREFIX', 'laraiot'),
+
+        'middleware' => [
+            'web',
+        ],
+
+        'guard' => env(
+            'LARAIOT_UI_GUARD',
+            'laraiot',
+        ),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | HTTP API
+    |--------------------------------------------------------------------------
+    */
+
+    'api' => [
+        'enabled' => env('LARAIOT_API_ENABLED', true),
+        'prefix' => env(
+            'LARAIOT_API_PREFIX',
+            'api/laraiot',
+        ),
+        'middleware' => [
+            'api',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Polling
+    |--------------------------------------------------------------------------
+    */
+
+    'polling' => [
+        'interval' => env(
+            'LARAIOT_POLLING_INTERVAL',
+            10,
+        ),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | MQTT Broker
+    |--------------------------------------------------------------------------
+    */
+
+    'mqtt' => [
+        'host' => env(
+            'LARAIOT_MQTT_HOST',
+            '127.0.0.1',
+        ),
+
+        'port' => env(
+            'LARAIOT_MQTT_PORT',
+            1883,
+        ),
+
+        'client_id' => env(
+            'LARAIOT_MQTT_CLIENT_ID',
+        ),
+
+        'username' => env(
+            'LARAIOT_MQTT_USERNAME',
+        ),
+
+        'password' => env(
+            'LARAIOT_MQTT_PASSWORD',
+        ),
+
+        'clean_session' => env(
+            'LARAIOT_MQTT_CLEAN_SESSION',
+            true,
+        ),
+
+        'keep_alive' => env(
+            'LARAIOT_MQTT_KEEP_ALIVE',
+            10,
+        ),
+
+        'connection_timeout' => env(
+            'LARAIOT_MQTT_CONNECTION_TIMEOUT',
+            5,
+        ),
+
+        /*
+        |--------------------------------------------------------------------------
+        | MQTT TLS
+        |--------------------------------------------------------------------------
+        */
+
+        'tls' => [
+            'enabled' => env(
+                'LARAIOT_MQTT_TLS_ENABLED',
+                false,
+            ),
+
+            'verify_peer' => env(
+                'LARAIOT_MQTT_TLS_VERIFY_PEER',
+                true,
+            ),
+
+            'verify_peer_name' => env(
+                'LARAIOT_MQTT_TLS_VERIFY_PEER_NAME',
+                true,
+            ),
+
+            'allow_self_signed' => env(
+                'LARAIOT_MQTT_TLS_ALLOW_SELF_SIGNED',
+                false,
+            ),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | MQTT Listener
+        |--------------------------------------------------------------------------
+        */
+
+        'listener' => [
+            'client_id' => env(
+                'LARAIOT_MQTT_LISTENER_CLIENT_ID',
+                'laraiot-listener',
+            ),
+
+            'sync_interval' => env(
+                'LARAIOT_MQTT_LISTENER_SYNC_INTERVAL',
+                5,
+            ),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | MQTT Health Heartbeat
+        |--------------------------------------------------------------------------
+        |
+        | The listener and web processes must use the same cache store so the
+        | frontend can observe the latest heartbeat.
+        |
+        */
+
+        'health' => [
+            'cache_key' => env(
+                'LARAIOT_MQTT_HEALTH_CACHE_KEY',
+                'laraiot:mqtt:health',
+            ),
+
+            'stale_after' => env(
+                'LARAIOT_MQTT_HEALTH_STALE_AFTER',
+                20,
+            ),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | MQTT Topic Testing
+        |--------------------------------------------------------------------------
+        */
+
+        'testing' => [
+            'state_timeout' => env(
+                'LARAIOT_MQTT_STATE_TEST_TIMEOUT',
+                30,
+            ),
+
+            'command_timeout' => env(
+                'LARAIOT_MQTT_COMMAND_TEST_TIMEOUT',
+                12,
+            ),
+
+            'token_ttl' => env(
+                'LARAIOT_MQTT_TEST_TOKEN_TTL',
+                10,
+            ),
+
+            'client_id_prefix' => env(
+                'LARAIOT_MQTT_TEST_CLIENT_ID_PREFIX',
+                'laraiot-test',
+            ),
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | MQTT Payload Parsers
+        |--------------------------------------------------------------------------
+        */
+
+        'payload_parsers' => [
+            RawPayloadParser::class,
+            JsonPayloadParser::class,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | WebSocket
+    |--------------------------------------------------------------------------
+    */
+
+    'websocket' => [
+        'connection' => env(
+            'LARAIOT_BROADCAST_CONNECTION',
+        ),
+
+        'channel_prefix' => env(
+            'LARAIOT_WEBSOCKET_CHANNEL_PREFIX',
+            'laraiot',
+        ),
+
+        /*
+        |------------------------------------------------------------------
+        | Reverb Runtime Health
+        |------------------------------------------------------------------
+        |
+        | LaraIoT confirms a Pusher-compatible WebSocket upgrade before the
+        | WebSocket communication mode may be selected. Results are cached
+        | briefly so normal UI requests do not repeatedly open sockets.
+        |
+        */
+
+        'health' => [
+            'cache_key' => env(
+                'LARAIOT_WEBSOCKET_HEALTH_CACHE_KEY',
+                'laraiot:websocket:health',
+            ),
+
+            'cache_ttl' => env(
+                'LARAIOT_WEBSOCKET_HEALTH_CACHE_TTL',
+                5,
+            ),
+
+            'timeout' => env(
+                'LARAIOT_WEBSOCKET_HEALTH_TIMEOUT',
+                1,
+            ),
+
+            'reconnect_interval' => env(
+                'LARAIOT_WEBSOCKET_RECONNECT_INTERVAL',
+                3,
+            ),
+        ],
+    ],
 
 ];
