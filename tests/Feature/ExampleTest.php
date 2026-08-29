@@ -6,7 +6,6 @@ use Danpopa\LaraIoT\LaraIoT;
 use Danpopa\LaraIoT\LaraIoTServiceProvider;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Reverb\ApplicationManager;
 
 it('resolves the singleton', function () {
     expect(app(LaraIoT::class))->toBeInstanceOf(LaraIoT::class);
@@ -131,10 +130,7 @@ it('loads the package views', function () {
 });
 
 it('registers and executes the installation command', function () {
-    $question = class_exists(ApplicationManager::class)
-        ? 'Laravel Reverb is installed but not fully configured. Configure it now?'
-        : 'Install and configure Laravel Reverb for optional WebSocket mode now?';
-
+    $question = $question = 'Install and configure Laravel Reverb for optional WebSocket mode now?';
     $this->artisan('laraiot:install', ['--force' => true])
         ->expectsConfirmation($question, 'no')
         ->expectsOutputToContain(
