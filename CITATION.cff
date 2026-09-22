@@ -1,16 +1,26 @@
 cff-version: 1.2.0
 message: "If you use LaraIoT in your research or software project, please cite it as follows."
 type: software
-title: "LaraIoT"
+title: "LaraIoT: A Laravel Package for Monitoring and Controlling IoT Devices"
 abstract: >-
   LaraIoT is a demonstrative and extensible Laravel package for developing
-  web applications intended to monitor and control IoT equipment. The package
-  integrates MQTT communication, device and topic management, state
-  persistence, command publishing, and two alternative mechanisms for updating
-  data: Polling and WebSockets.
+  web applications for monitoring and controlling IoT devices.
+  The package integrates MQTT communication, device and topic management,
+  device state persistence, and command publishing.
+  It supports two alternative mechanisms for updating data in the web
+  interface: periodic HTTP polling and WebSockets, enabling developers
+  and researchers to explore and compare these approaches.
+  LaraIoT offers a frontend-agnostic installation and an optional web
+  interface built with Vue.js and Inertia.
+  It provides a reusable starting point for developing IoT monitoring
+  and control applications with Laravel.
+  The package is intended for research, education, and prototyping.
+  Security hardening is outside its scope, and additional safeguards
+  are required before deployment in production environments.
 repository-code: "https://github.com/danielpopa26/laraiot"
 url: "https://github.com/danielpopa26/laraiot"
 license: MIT
+doi: "10.5281/zenodo.22166729"
 keywords:
   - Laravel
   - Internet of Things
